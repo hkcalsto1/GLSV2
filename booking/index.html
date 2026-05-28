@@ -107,10 +107,16 @@ async function init() {
       fetch(N8N + '/v2-slots').then(r => r.json())
     ]);
     config = cfgRes;
-    slots = (slotsRes.slots || []).filter(s => {
+    slots = (slotsRes.slots || []).map(s => ({
+      ...s,
+      slot_Id: s.Slot_Id || s.slot_Id || '',
+      date: s.Date || s.date || '',
+      time: s.Time || s.time || '',
+      Status: s.Status || s.status || '',
+      capacity: parseInt(s['capacity '] || s.capacity || 1),
+    })).filter(s => {
       const booked = parseInt(s.booked_count || 0);
-      const cap = parseInt(s.capacity || 1);
-      return s.Status === 'available' && booked < cap;
+      return s.Status === 'available' && booked < s.capacity;
     }).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
 
     applyBranding(config);

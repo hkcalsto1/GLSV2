@@ -874,12 +874,14 @@ function selectEmailMode(mode) {
 }
 
 async function saveSettings(keys) {
-  const payload = {};
-  keys.forEach(k => { const el = document.getElementById('s_' + k); if (el) payload[k] = el.value; });
-  if (keys.includes('brand_color')) payload.brand_color = document.getElementById('s_brand_color').value;
-  await api('/v2-save-settings', {method:'POST', body: JSON.stringify(payload)});
-  toast('Settings saved', 'success');
-  await loadSettings();
+  try {
+    const payload = {};
+    keys.forEach(k => { const el = document.getElementById('s_' + k); if (el) payload[k] = el.value; });
+    if (keys.includes('brand_color')) payload.brand_color = document.getElementById('s_brand_color').value;
+    await api('/v2-save-settings', {method:'POST', body: JSON.stringify(payload)});
+    toast('Settings saved', 'success');
+    await loadSettings();
+  } catch(e) { toast('Save failed. Check connection.', 'error'); }
 }
 
 async function saveEmailSettings() {
@@ -919,7 +921,9 @@ let _currentPreviewType = '';
 function previewEmail(type) {
   _currentPreviewType = type;
   const s = settingsCache || {};
-  const customMsg = type === 'invite' ? (s.invite_message||'') : type === 'reminder_manual' ? (s.reminder_message||'') : '';
+  const inviteMsg = document.getElementById('s_invite_message')?.value ?? s.invite_message ?? '';
+  const reminderMsg = document.getElementById('s_reminder_message')?.value ?? s.reminder_message ?? '';
+  const customMsg = type === 'invite' ? inviteMsg : type === 'reminder_manual' ? reminderMsg : '';
   const sampleData = {name:'Jane Smith',company:'Acme Logistics',client_name:'Jane Smith',client_email:'jane@acme.com',date:'Jun 24, 2026',time:'10:00',salesperson_name:'Tom Lee',salesperson_email:'tom@yourcompany.com',_when:'1 day',bookingLink:s.booking_link||'#',unsubLink:'#'};
   const html = buildEmailPreview(type, '', customMsg, sampleData);
   const labels = {invite:'Invite email',reminder_manual:'Manual reminder',reminder_auto:'Auto reminder',sp_confirm:'SP notification',customer_confirm:'Customer confirmation',booking_received:'Booking received'};
