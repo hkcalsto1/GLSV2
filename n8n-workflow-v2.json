@@ -19,7 +19,7 @@
     },
     {
       "parameters": {
-        "jsCode": "var body=$input.first().json.body||$input.first().json;\\nvar pw=body.password||'';\\nvar stored=process.env.GLS_DASHBOARD_PASSWORD||'GLS2026!';\\nreturn [{json:{success:pw===stored}}];"
+        "jsCode": "var body=$input.first().json.body||$input.first().json;\nvar pw=body.password||\"\";\nvar stored=process.env.GLS_DASHBOARD_PASSWORD||\"GLS2026!\";\nreturn [{json:{success:pw===stored}}];"
       },
       "id": "auth-002",
       "name": "Check Password",
