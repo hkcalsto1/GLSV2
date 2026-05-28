@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book Your Appointment</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.1);width:100%;max-width:520px;overflow:hidden}
+.card-header{padding:28px 32px 20px;border-bottom:1px solid #f1f5f9}
+.logo-wrap{margin-bottom:14px}
+.logo-wrap img{max-height:40px;max-width:160px;object-fit:contain}
+.card-header h1{font-size:20px;font-weight:800;color:#0f1c2e;line-height:1.3}
+.card-header p{font-size:14px;color:#64748b;margin-top:6px;line-height:1.6}
+.event-info{display:flex;flex-direction:column;gap:4px;margin-top:14px;padding:12px 16px;background:#f8fafc;border-radius:8px;border-left:3px solid var(--brand-color,#0f1c2e)}
+.event-info span{font-size:13px;color:#374151;display:flex;align-items:center;gap:6px}
+.card-body{padding:24px 32px}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
+.form-group .required{color:#ef4444;margin-left:2px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;transition:border 0.2s;color:#1a202c;background:#fff;font-family:inherit}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--brand-color,#0f1c2e)}
+.form-group textarea{resize:vertical;min-height:80px}
+.radio-group,.checkbox-group{display:flex;flex-direction:column;gap:8px}
+.radio-group label,.checkbox-group label{display:flex;align-items:center;gap:10px;font-size:14px;color:#374151;cursor:pointer;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;transition:all 0.15s}
+.radio-group label:has(input:checked),.checkbox-group label:has(input:checked){border-color:var(--brand-color,#0f1c2e);background:#f0f9ff}
+.radio-group input,.checkbox-group input{flex-shrink:0}
+.slot-option{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer;transition:all 0.15s;margin-bottom:8px}
+.slot-option:has(input:checked){border-color:var(--brand-color,#0f1c2e);background:#f0f9ff}
+.slot-option input{flex-shrink:0}
+.slot-option .slot-label{font-size:14px;font-weight:600;color:#1a202c}
+.slot-option .slot-sub{font-size:12px;color:#64748b}
+.submit-btn{width:100%;padding:14px;border:none;border-radius:10px;background:var(--brand-color,#0f1c2e);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:opacity 0.2s;margin-top:8px}
+.submit-btn:hover{opacity:0.9}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+.card-footer{padding:14px 32px;border-top:1px solid #f1f5f9;text-align:center}
+.card-footer a{font-size:12px;color:#94a3b8;text-decoration:none}
+.card-footer a:hover{color:#64748b}
+
+/* Success state */
+#successState{display:none;padding:48px 32px;text-align:center}
+#successState .check{width:64px;height:64px;background:#f0fdf4;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+#successState h2{font-size:20px;font-weight:700;color:#0f1c2e;margin-bottom:8px}
+#successState p{font-size:14px;color:#64748b;line-height:1.6}
+
+/* Loading state */
+#loadingState{display:flex;align-items:center;justify-content:center;padding:80px 20px}
+.spinner{width:32px;height:32px;border:3px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin 0.6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.err-msg{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 14px;font-size:13px;color:#ef4444;margin-bottom:16px;display:none}
+.no-slots{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;font-size:13px;color:#92400e;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div id="loadingState"><div class="spinner"></div></div>
+
+  <div id="formState" style="display:none">
+    <div class="card-header">
+      <div class="logo-wrap" id="logoWrap" style="display:none"><img id="logoImg" src="" alt="Logo"></div>
+      <h1 id="formTitle">Book Your Appointment</h1>
+      <p id="formIntro"></p>
+      <div class="event-info" id="eventInfo" style="display:none">
+        <span id="eventDatesRow"></span>
+        <span id="eventVenueRow"></span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="err-msg" id="errMsg"></div>
+      <form id="bookingForm" onsubmit="submitForm(event)">
+        <div id="dynamicFields"></div>
+
+        <!-- Slot picker — always shown -->
+        <div class="form-group" id="slotGroup">
+          <label>Preferred Time Slot <span class="required">*</span></label>
+          <div id="slotPicker"><div style="color:#94a3b8;font-size:13px">Loading available slots...</div></div>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">Submit Booking</button>
+      </form>
+    </div>
+    <div class="card-footer">
+      <a id="unsubLink" href="#" style="display:none">Unsubscribe from emails</a>
+    </div>
+  </div>
+
+  <div id="successState">
+    <div class="check">
+      <svg width="28" height="28" fill="none" stroke="#10b981" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h2 id="successTitle">Booking Received!</h2>
+    <p id="successMsg">Thank you. We will confirm your booking shortly.</p>
+  </div>
+</div>
+
+<script>
+const N8N = 'https://n8n.okahh.com/webhook';
+let config = {};
+let slots = [];
+
+async function init() {
+  try {
+    const [cfgRes, slotsRes] = await Promise.all([
+      fetch(N8N + '/v2-form-config').then(r => r.json()),
+      fetch(N8N + '/v2-slots').then(r => r.json())
+    ]);
+    config = cfgRes;
+    slots = (slotsRes.slots || []).filter(s => {
+      const booked = parseInt(s.booked_count || 0);
+      const cap = parseInt(s.capacity || 1);
+      return s.Status === 'available' && booked < cap;
+    }).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+
+    applyBranding(config);
+    renderFormFields(config.fields || []);
+    renderSlots();
+
+    // Unsubscribe link
+    const params = new URLSearchParams(window.location.search);
+    const emailParam = params.get('email');
+    if (emailParam) {
+      const ul = document.getElementById('unsubLink');
+      ul.href = N8N + '/v2-unsubscribe?email=' + encodeURIComponent(emailParam);
+      ul.style.display = 'inline';
+    }
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('formState').style.display = 'block';
+  } catch(e) {
+    document.getElementById('loadingState').innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;font-size:14px">Unable to load form. Please try again later.</div>';
+  }
+}
+
+function applyBranding(cfg) {
+  const color = cfg.brand_color || '#0f1c2e';
+  document.documentElement.style.setProperty('--brand-color', color);
+
+  if (cfg.logo_url) {
+    document.getElementById('logoImg').src = cfg.logo_url;
+    document.getElementById('logoWrap').style.display = 'block';
+  }
+
+  document.getElementById('formTitle').textContent = cfg.form_title || 'Book Your Appointment';
+  document.getElementById('formIntro').textContent = cfg.form_intro || '';
+  document.getElementById('successTitle').textContent = 'Booking Received!';
+  document.getElementById('successMsg').textContent = cfg.form_thankyou || 'Thank you! We will confirm your booking shortly.';
+  document.getElementById('submitBtn').textContent = cfg.form_submit_btn || 'Submit Booking';
+  document.title = cfg.form_title || 'Book Your Appointment';
+
+  if (cfg.event_dates || cfg.event_venue) {
+    if (cfg.event_dates) document.getElementById('eventDatesRow').innerHTML = '📅 ' + esc(cfg.event_dates);
+    if (cfg.event_venue) document.getElementById('eventVenueRow').innerHTML = '📍 ' + esc(cfg.event_venue);
+    document.getElementById('eventInfo').style.display = 'flex';
+  }
+}
+
+function renderFormFields(fields) {
+  const container = document.getElementById('dynamicFields');
+  container.innerHTML = fields.filter(f => f.enabled !== 'no').map(f => {
+    const req = f.required === 'yes';
+    const reqAttr = req ? 'required' : '';
+    const reqMark = req ? '<span class="required">*</span>' : '';
+    const name = 'field_' + (f.field_id || f.label);
+    const opts = (f.options || '').split(',').map(o => o.trim()).filter(Boolean);
+
+    let input = '';
+    if (f.type === 'textarea') {
+      input = `<textarea name="${esc(name)}" ${reqAttr} placeholder="${esc(f.placeholder||'')}"></textarea>`;
+    } else if (f.type === 'select') {
+      input = `<select name="${esc(name)}" ${reqAttr}><option value="">Select...</option>${opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>`;
+    } else if (f.type === 'radio') {
+      input = `<div class="radio-group">${opts.map(o=>`<label><input type="radio" name="${esc(name)}" value="${esc(o)}" ${reqAttr}> ${esc(o)}</label>`).join('')}</div>`;
+    } else if (f.type === 'checkbox') {
+      input = `<div class="checkbox-group">${opts.map(o=>`<label><input type="checkbox" name="${esc(name)}_${esc(o)}" value="${esc(o)}"> ${esc(o)}</label>`).join('')}</div>`;
+    } else {
+      input = `<input type="${f.type||'text'}" name="${esc(name)}" ${reqAttr} placeholder="${esc(f.placeholder||'')}">`;
+    }
+    return `<div class="form-group"><label>${esc(f.label||f.field_id)}${reqMark}</label>${input}</div>`;
+  }).join('');
+}
+
+function renderSlots() {
+  const el = document.getElementById('slotPicker');
+  if (!slots.length) {
+    el.innerHTML = '<div class="no-slots">No available slots at this time. Please contact us directly.</div>';
+    document.getElementById('submitBtn').disabled = true;
+    return;
+  }
+  el.innerHTML = slots.map(s => `
+    <label class="slot-option">
+      <input type="radio" name="slot_id" value="${esc(s.slot_Id)}" data-date="${esc(s.date)}" data-time="${esc(s.time||'')}" required>
+      <div>
+        <div class="slot-label">${fmtDate(s.date)} · ${s.time||''}</div>
+        <div class="slot-sub">${parseInt(s.capacity||1) - parseInt(s.booked_count||0)} spot(s) remaining</div>
+      </div>
+    </label>`).join('');
+}
+
+async function submitForm(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const err = document.getElementById('errMsg');
+  err.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  try {
+    const form = document.getElementById('bookingForm');
+    const data = new FormData(form);
+    const payload = {};
+
+    // Collect all field values
+    for (const [key, val] of data.entries()) {
+      if (key.startsWith('field_')) {
+        const cleanKey = key.replace(/^field_/, '');
+        if (payload[cleanKey]) {
+          payload[cleanKey] = payload[cleanKey] + ', ' + val;
+        } else {
+          payload[cleanKey] = val;
+        }
+      }
+    }
+
+    // Slot
+    const selectedSlot = form.querySelector('input[name="slot_id"]:checked');
+    if (!selectedSlot) { throw new Error('Please select a time slot'); }
+    payload.slot_id = selectedSlot.value;
+    payload.date = selectedSlot.dataset.date;
+    payload.time = selectedSlot.dataset.time;
+
+    // Map common fields
+    payload.name = payload.name || payload.full_name || payload.fullname || '';
+    payload.email = payload.email || '';
+    payload.company = payload.company || '';
+
+    const res = await fetch(N8N + '/v2-form-submit', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (result.success === false) throw new Error(result.message || 'Submission failed');
+
+    document.getElementById('formState').style.display = 'none';
+    document.getElementById('successState').style.display = 'block';
+  } catch(ex) {
+    err.textContent = ex.message || 'Something went wrong. Please try again.';
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = config.form_submit_btn || 'Submit Booking';
+  }
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  try { return new Date(d).toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'long',year:'numeric'}); }
+  catch(e){ return d; }
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+init();
+</script>
+</body>
+</html>

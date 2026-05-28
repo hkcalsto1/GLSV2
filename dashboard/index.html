@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Booking Dashboard</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;color:#1a202c;min-height:100vh}
+
+/* LOGIN */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0f1c2e}
+.login-box{background:#fff;border-radius:16px;padding:48px 40px;width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.login-logo{font-size:28px;font-weight:800;color:#0f1c2e;margin-bottom:8px;letter-spacing:-0.5px}
+.login-sub{color:#64748b;font-size:14px;margin-bottom:32px}
+.login-box input{width:100%;padding:12px 16px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:15px;outline:none;transition:border 0.2s}
+.login-box input:focus{border-color:#3b82f6}
+.login-box button{width:100%;padding:13px;background:#0f1c2e;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;margin-top:16px;transition:background 0.2s}
+.login-box button:hover{background:#1e3a5f}
+.login-err{color:#e02424;font-size:13px;margin-top:12px;min-height:18px}
+
+/* LAYOUT */
+#app{display:none;min-height:100vh}
+.sidebar{position:fixed;top:0;left:0;width:220px;height:100vh;background:#0f1c2e;display:flex;flex-direction:column;z-index:100;overflow-y:auto}
+.sidebar-brand{padding:24px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.sidebar-brand .brand-name{color:#fff;font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-brand .brand-sub{color:#94a3b8;font-size:11px;margin-top:2px}
+.sidebar-nav{padding:12px 0;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;color:#94a3b8;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.15s;border-left:3px solid transparent}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,0.05)}
+.nav-item.active{color:#fff;background:rgba(59,130,246,0.15);border-left-color:#3b82f6}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+.sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,0.08)}
+.sidebar-footer span{color:#64748b;font-size:12px}
+.main{margin-left:220px;padding:32px;min-height:100vh}
+.page-header{margin-bottom:28px}
+.page-header h1{font-size:24px;font-weight:700;color:#0f1c2e}
+.page-header p{color:#64748b;font-size:14px;margin-top:4px}
+
+/* CARDS & STATS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.07)}
+.stat-card .label{font-size:12px;color:#64748b;font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+.stat-card .value{font-size:28px;font-weight:700;color:#0f1c2e;margin-top:6px}
+.stat-card .value.blue{color:#3b82f6}
+.stat-card .value.green{color:#10b981}
+.stat-card .value.amber{color:#f59e0b}
+.stat-card .value.red{color:#ef4444}
+
+/* TABLE */
+.card{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.07);overflow:hidden}
+.card-header{padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.card-header h3{font-size:15px;font-weight:600;color:#0f1c2e}
+.card-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse}
+th{background:#f8fafc;padding:10px 16px;text-align:left;font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #f1f5f9}
+td{padding:12px 16px;border-bottom:1px solid #f8fafc;font-size:14px;color:#374151;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafcff}
+.table-wrap{overflow-x:auto}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-gray{background:#f1f5f9;color:#64748b}
+.badge-blue{background:#eff6ff;color:#3b82f6}
+.badge-green{background:#f0fdf4;color:#10b981}
+.badge-amber{background:#fffbeb;color:#d97706}
+.badge-red{background:#fef2f2;color:#ef4444}
+.badge-purple{background:#faf5ff;color:#8b5cf6}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;white-space:nowrap}
+.btn-primary{background:#0f1c2e;color:#fff}
+.btn-primary:hover{background:#1e3a5f}
+.btn-blue{background:#3b82f6;color:#fff}
+.btn-blue:hover{background:#2563eb}
+.btn-outline{background:#fff;color:#374151;border:1.5px solid #e2e8f0}
+.btn-outline:hover{border-color:#94a3b8;background:#f8fafc}
+.btn-danger{background:#fef2f2;color:#ef4444;border:1.5px solid #fecaca}
+.btn-danger:hover{background:#ef4444;color:#fff}
+.btn-success{background:#f0fdf4;color:#10b981;border:1.5px solid #bbf7d0}
+.btn-success:hover{background:#10b981;color:#fff}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+
+/* SEARCH */
+.search-input{padding:8px 12px 8px 34px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;width:200px;transition:border 0.2s;background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%2394a3b8' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center}
+.search-input:focus{border-color:#3b82f6;background-color:#fff}
+
+/* FORMS */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;transition:border 0.2s;background:#fff;color:#1a202c}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#3b82f6}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-group .hint{font-size:12px;color:#94a3b8;margin-top:4px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.modal-lg{max-width:720px}
+.modal-xl{max-width:900px}
+.modal h2{font-size:18px;font-weight:700;color:#0f1c2e;margin-bottom:20px}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:16px;border-top:1px solid #f1f5f9}
+
+/* TABS */
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* TOGGLE */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #f1f5f9}
+.toggle-row:last-child{border-bottom:none}
+.toggle-info .toggle-label{font-size:14px;font-weight:600;color:#1a202c}
+.toggle-info .toggle-desc{font-size:12px;color:#64748b;margin-top:2px}
+.toggle{position:relative;display:inline-block;width:44px;height:24px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:#cbd5e1;border-radius:24px;cursor:pointer;transition:0.2s}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:0.2s}
+.toggle input:checked + .toggle-slider{background:#3b82f6}
+.toggle input:checked + .toggle-slider:before{transform:translateX(20px)}
+
+/* SECTION */
+.section{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,0.07)}
+.section h3{font-size:15px;font-weight:700;color:#0f1c2e;margin-bottom:4px}
+.section .section-desc{font-size:13px;color:#64748b;margin-bottom:20px}
+.divider{border:none;border-top:1px solid #f1f5f9;margin:20px 0}
+
+/* EMAIL MODE SWITCHER */
+.email-mode-card{border:2px solid #e2e8f0;border-radius:10px;padding:16px 20px;cursor:pointer;transition:all 0.15s;margin-bottom:12px;display:flex;align-items:flex-start;gap:12px}
+.email-mode-card.selected{border-color:#3b82f6;background:#eff6ff}
+.email-mode-card .mode-radio{width:18px;height:18px;border-radius:50%;border:2px solid #cbd5e1;margin-top:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.email-mode-card.selected .mode-radio{border-color:#3b82f6;background:#3b82f6}
+.email-mode-card.selected .mode-radio::after{content:'';width:6px;height:6px;border-radius:50%;background:#fff}
+.email-mode-card .mode-title{font-size:14px;font-weight:600;color:#1a202c}
+.email-mode-card .mode-desc{font-size:12px;color:#64748b;margin-top:2px}
+
+/* FORM BUILDER */
+.field-item{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.field-item.disabled-field{opacity:0.5}
+.field-drag{color:#94a3b8;cursor:grab;font-size:16px;line-height:1}
+.field-info{flex:1}
+.field-info .field-label{font-size:14px;font-weight:600;color:#1a202c}
+.field-info .field-meta{font-size:12px;color:#64748b;margin-top:2px}
+.field-actions{display:flex;gap:6px}
+
+/* SLOT GRID */
+.slot-item{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.slot-item .slot-info .slot-time{font-size:14px;font-weight:600;color:#1a202c}
+.slot-item .slot-info .slot-cap{font-size:12px;color:#64748b;margin-top:2px}
+.slot-item .slot-bar{flex:1;margin:0 16px;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden}
+.slot-item .slot-bar-fill{height:100%;background:#3b82f6;border-radius:3px;transition:width 0.3s}
+.slot-item .slot-bar-fill.full{background:#ef4444}
+.slot-item .slot-bar-fill.warn{background:#f59e0b}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast-item{background:#1a202c;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.2);opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none}
+.toast-item.show{opacity:1;transform:translateY(0)}
+.toast-item.success{background:#065f46}
+.toast-item.error{background:#991b1b}
+
+/* LOADING */
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin 0.6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-state{text-align:center;padding:48px 20px;color:#94a3b8;font-size:14px}
+
+/* COLOR PICKER */
+.color-preview{width:36px;height:36px;border-radius:6px;border:1.5px solid #e2e8f0;cursor:pointer;flex-shrink:0}
+
+/* PASSWORD TOGGLE */
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:40px}
+.pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:0}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:48px 20px}
+.empty-state svg{opacity:0.2;margin-bottom:12px}
+.empty-state p{color:#94a3b8;font-size:14px}
+
+/* RESPONSIVE */
+@media(max-width:768px){.sidebar{width:100%;height:auto;position:relative}.main{margin-left:0}.form-row,.form-row-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo" id="loginBrand">Booking System</div>
+    <div class="login-sub">Dashboard Login</div>
+    <input type="password" id="loginPw" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-name" id="sidebarBrand">Booking System</div>
+      <div class="brand-sub" id="sidebarEvent">Loading...</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="showTab('contacts')" id="nav-contacts">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Contacts
+      </div>
+      <div class="nav-item" onclick="showTab('pending')" id="nav-pending">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Pending
+      </div>
+      <div class="nav-item" onclick="showTab('confirmed')" id="nav-confirmed">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Confirmed
+      </div>
+      <div class="nav-item" onclick="showTab('templates')" id="nav-templates">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Templates
+      </div>
+      <div class="nav-item" onclick="showTab('slots')" id="nav-slots">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Slots
+      </div>
+      <div class="nav-item" onclick="showTab('team')" id="nav-team">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Team
+      </div>
+      <div class="nav-item" onclick="showTab('formbuilder')" id="nav-formbuilder">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Form Builder
+      </div>
+      <div class="nav-item" onclick="showTab('settings')" id="nav-settings">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <span id="sidebarUrl"></span>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- CONTACTS TAB -->
+    <div class="tab-pane active" id="tab-contacts">
+      <div class="page-header">
+        <h1>Contacts</h1>
+        <p>Manage your invitee list and track engagement</p>
+      </div>
+      <div class="stats-row" id="contactStats"></div>
+      <div class="card">
+        <div class="card-header">
+          <h3>All Contacts</h3>
+          <div class="card-actions">
+            <input type="text" class="search-input" placeholder="Search..." oninput="filterContacts(this.value)">
+            <button class="btn btn-outline btn-sm" onclick="openModal('importModal')">Import</button>
+            <button class="btn btn-primary btn-sm" onclick="openModal('addContactModal')">+ Add Contact</button>
+            <button class="btn btn-blue btn-sm" onclick="inviteAll()">Invite All Unsent</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Contact</th><th>Company</th><th>Status</th><th>Invite Sent</th><th>Actions</th></tr></thead>
+            <tbody id="contactsTable"><tr><td colspan="5" class="loading-state"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PENDING TAB -->
+    <div class="tab-pane" id="tab-pending">
+      <div class="page-header">
+        <h1>Pending Bookings</h1>
+        <p>Review and assign salespersons to new booking requests</p>
+      </div>
+      <div id="pendingList" class="loading-state"><div class="spinner"></div></div>
+    </div>
+
+    <!-- CONFIRMED TAB -->
+    <div class="tab-pane" id="tab-confirmed">
+      <div class="page-header">
+        <h1>Confirmed Bookings</h1>
+        <p>All confirmed appointments</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Confirmed</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date & Time</th><th>Client</th><th>Company</th><th>Salesperson</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="confirmedTable"><tr><td colspan="6" class="loading-state"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPLATES TAB -->
+    <div class="tab-pane" id="tab-templates">
+      <div class="page-header">
+        <h1>Email Templates</h1>
+        <p>Customise what your contacts receive at every step</p>
+      </div>
+      <div id="templatesList" class="loading-state"><div class="spinner"></div></div>
+    </div>
+
+    <!-- SLOTS TAB -->
+    <div class="tab-pane" id="tab-slots">
+      <div class="page-header">
+        <h1>Time Slots</h1>
+        <p>Manage available appointment times</p>
+      </div>
+      <div style="display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start">
+        <div class="section">
+          <h3>Add New Slot</h3>
+          <p class="section-desc">Create an available time slot</p>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="newSlotDate">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Time</label>
+              <input type="time" id="newSlotTime">
+            </div>
+            <div class="form-group">
+              <label>Capacity</label>
+              <input type="number" id="newSlotCap" value="1" min="1" max="20">
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="addSlot()">Add Slot</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>All Slots</h3><button class="btn btn-outline btn-sm" onclick="loadSlots()">Refresh</button></div>
+          <div style="padding:16px" id="slotsList"><div class="loading-state"><div class="spinner"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEAM TAB -->
+    <div class="tab-pane" id="tab-team">
+      <div class="page-header">
+        <h1>Team</h1>
+        <p>Manage your salespeople who get assigned to bookings</p>
+      </div>
+      <div style="display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start">
+        <div class="section">
+          <h3>Add Team Member</h3>
+          <p class="section-desc">Add a salesperson to your roster</p>
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="newStaffName" placeholder="Jane Lee">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="newStaffEmail" placeholder="jane@company.com">
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="addStaff()">Add Member</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Team Members</h3><button class="btn btn-outline btn-sm" onclick="loadStaff()">Refresh</button></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th></th></tr></thead>
+              <tbody id="staffTable"><tr><td colspan="3" class="loading-state"><div class="spinner"></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORM BUILDER TAB -->
+    <div class="tab-pane" id="tab-formbuilder">
+      <div class="page-header">
+        <h1>Form Builder</h1>
+        <p>Configure what your booking form looks like — no code needed</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start">
+        <div>
+          <div class="section">
+            <h3>Form Header</h3>
+            <p class="section-desc">Text shown at the top of your booking form</p>
+            <div class="form-group">
+              <label>Form Title</label>
+              <input type="text" id="fbTitle" placeholder="Book Your Appointment">
+            </div>
+            <div class="form-group">
+              <label>Intro Text</label>
+              <textarea id="fbIntro" rows="2" placeholder="Fill in the form below to book your slot."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Submit Button Text</label>
+              <input type="text" id="fbSubmitBtn" placeholder="Submit Booking">
+            </div>
+            <div class="form-group">
+              <label>Thank-You Message (shown after submit)</label>
+              <textarea id="fbThankyou" rows="2" placeholder="Thank you! We will confirm your booking shortly."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="saveFormHeader()">Save Header</button>
+          </div>
+          <div class="section">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+              <div><h3>Form Fields</h3><p class="section-desc" style="margin:0">Fields appear on your booking form in this order</p></div>
+              <button class="btn btn-primary btn-sm" onclick="openModal('addFieldModal')">+ Add Field</button>
+            </div>
+            <div id="fieldsList"><div class="loading-state"><div class="spinner"></div></div></div>
+          </div>
+        </div>
+        <div class="section" style="position:sticky;top:20px">
+          <h3>Live Preview</h3>
+          <p class="section-desc">How your form looks to visitors</p>
+          <div id="formPreview" style="border:1.5px solid #e2e8f0;border-radius:8px;padding:16px;background:#f8fafc;min-height:200px;font-size:13px"></div>
+          <div style="margin-top:12px">
+            <a id="formLinkBtn" href="#" target="_blank" class="btn btn-outline btn-sm" style="width:100%;justify-content:center">Open Live Form ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="tab-pane" id="tab-settings">
+      <div class="page-header">
+        <h1>Settings</h1>
+        <p>Configure your event, email, and branding</p>
+      </div>
+
+      <!-- Event -->
+      <div class="section">
+        <h3>Event Details</h3>
+        <p class="section-desc">Used in email templates and the booking form</p>
+        <div class="form-row">
+          <div class="form-group"><label>Event Name</label><input type="text" id="s_event_name" placeholder="Air Cargo China 2026"></div>
+          <div class="form-group"><label>Event Dates</label><input type="text" id="s_event_dates" placeholder="June 24–26, 2026"></div>
+        </div>
+        <div class="form-group"><label>Venue</label><input type="text" id="s_event_venue" placeholder="Shanghai New International Expo Centre"></div>
+        <button class="btn btn-primary" onclick="saveSettings(['event_name','event_dates','event_venue'])">Save Event Details</button>
+      </div>
+
+      <!-- Email -->
+      <div class="section">
+        <h3>Email Sending</h3>
+        <p class="section-desc">Choose how your emails are sent</p>
+        <div class="email-mode-card selected" id="modeManaged" onclick="selectEmailMode('managed')">
+          <div class="mode-radio" id="radioManaged"></div>
+          <div>
+            <div class="mode-title">Use SmartFlow Email (Recommended for most clients)</div>
+            <div class="mode-desc">Emails sent via SmartFlow's shared sending infrastructure. No setup needed. From address: notifications@smartflowhk.com</div>
+          </div>
+        </div>
+        <div class="email-mode-card" id="modeOwn" onclick="selectEmailMode('own')">
+          <div class="mode-radio" id="radioOwn"></div>
+          <div>
+            <div class="mode-title">Use Your Own Email Domain</div>
+            <div class="mode-desc">Emails sent from your verified domain via your own Resend account. Requires Resend API key.</div>
+          </div>
+        </div>
+        <div id="ownEmailFields" style="display:none;margin-top:16px;padding:16px;background:#f8fafc;border-radius:8px;border:1.5px solid #e2e8f0">
+          <div class="form-row">
+            <div class="form-group"><label>From Email</label><input type="email" id="s_from_email" placeholder="notifications@yourcompany.com"></div>
+            <div class="form-group">
+              <label>Resend API Key</label>
+              <div class="pw-wrap">
+                <input type="password" id="s_resend_api_key" placeholder="re_xxxxxxxxxxxx">
+                <button class="pw-toggle" onclick="togglePw('s_resend_api_key',this)">Show</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:16px">
+          <div class="form-group"><label>From Name</label><input type="text" id="s_from_name" placeholder="Your Company"></div>
+          <div class="form-group"><label>Reply-To Email</label><input type="email" id="s_reply_to" placeholder="hello@yourcompany.com"></div>
+        </div>
+        <button class="btn btn-primary" onclick="saveEmailSettings()">Save Email Settings</button>
+      </div>
+
+      <!-- Branding -->
+      <div class="section">
+        <h3>Branding</h3>
+        <p class="section-desc">Applied to your booking form and dashboard header</p>
+        <div class="form-row">
+          <div class="form-group"><label>Company / Brand Name</label><input type="text" id="s_brand_name" placeholder="Your Company"></div>
+          <div class="form-group"><label>Logo URL</label><input type="text" id="s_logo_url" placeholder="https://yoursite.com/logo.png"><div class="hint">Link to your logo image (PNG/SVG)</div></div>
+        </div>
+        <div class="form-group">
+          <label>Brand Colour</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="color" id="s_brand_color" value="#0f1c2e" style="width:48px;height:36px;padding:2px;border:1.5px solid #e2e8f0;border-radius:6px;cursor:pointer">
+            <input type="text" id="s_brand_color_hex" placeholder="#0f1c2e" style="width:120px" oninput="syncColorHex()">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings(['brand_name','logo_url','brand_color'])">Save Branding</button>
+      </div>
+
+      <!-- Security -->
+      <div class="section">
+        <h3>Dashboard Password</h3>
+        <p class="section-desc">Change your dashboard login password</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label>New Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="s_new_pw" placeholder="New password">
+              <button class="pw-toggle" onclick="togglePw('s_new_pw',this)">Show</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Confirm Password</label>
+            <input type="password" id="s_confirm_pw" placeholder="Repeat new password">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Add Contact -->
+<div class="modal-overlay" id="addContactModal">
+  <div class="modal">
+    <h2>Add Contact</h2>
+    <div class="form-row">
+      <div class="form-group"><label>Full Name</label><input type="text" id="ac_name" placeholder="Jane Lee"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="ac_email" placeholder="jane@company.com"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Company</label><input type="text" id="ac_company" placeholder="ACME Logistics"></div>
+      <div class="form-group"><label>Job Title <span style="color:#94a3b8;font-weight:400">(optional)</span></label><input type="text" id="ac_title" placeholder="Sales Director"></div>
+    </div>
+    <div class="form-group"><label>Notes <span style="color:#94a3b8;font-weight:400">(optional)</span></label><textarea id="ac_notes" rows="2" placeholder="Any notes..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('addContactModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addContact()">Add Contact</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal modal-lg">
+    <h2>Import Contacts</h2>
+    <div style="display:flex;gap:12px;margin-bottom:20px">
+      <button class="btn btn-outline btn-sm" onclick="setImportMode('paste')" id="impTabPaste" style="font-weight:700;border-color:#3b82f6;color:#3b82f6">Paste List</button>
+      <button class="btn btn-outline btn-sm" onclick="setImportMode('csv')" id="impTabCsv">CSV Upload</button>
+    </div>
+    <div id="impPastePanel">
+      <div class="form-group"><label>Paste contacts (one per line: Name, Email, Company)</label><textarea id="importPaste" rows="8" placeholder="Jane Lee, jane@acme.com, ACME Cargo&#10;John Smith, john@tlc.com, TLC Air"></textarea></div>
+    </div>
+    <div id="impCsvPanel" style="display:none">
+      <div class="form-group"><label>Upload CSV (columns: name, email, company, title)</label><input type="file" id="importCsvFile" accept=".csv"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('importModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doImport()">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- Assign SP -->
+<div class="modal-overlay" id="assignModal">
+  <div class="modal">
+    <h2>Assign Salesperson</h2>
+    <input type="hidden" id="assignBookingId">
+    <input type="hidden" id="assignEmail">
+    <input type="hidden" id="assignSlotId">
+    <div id="assignBookingInfo" style="background:#f8fafc;border-radius:8px;padding:14px;margin-bottom:16px;font-size:14px"></div>
+    <div class="form-group">
+      <label>Primary Salesperson</label>
+      <select id="assignSp1"><option value="">Select...</option></select>
+    </div>
+    <div class="form-group">
+      <label>Secondary Salesperson <span style="color:#94a3b8;font-weight:400">(optional)</span></label>
+      <select id="assignSp2"><option value="">None</option></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('assignModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doAssign()">Confirm & Send Emails</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reschedule -->
+<div class="modal-overlay" id="rescheduleModal">
+  <div class="modal">
+    <h2>Reschedule Booking</h2>
+    <input type="hidden" id="rsEmail">
+    <input type="hidden" id="rsType">
+    <div id="rsCurrentInfo" style="background:#f8fafc;border-radius:8px;padding:14px;margin-bottom:16px;font-size:14px"></div>
+    <div class="form-group">
+      <label>New Slot</label>
+      <select id="rsNewSlot"><option value="">Select new slot...</option></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('rescheduleModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doReschedule()">Reschedule</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change SP -->
+<div class="modal-overlay" id="changeSpModal">
+  <div class="modal">
+    <h2>Change Salesperson</h2>
+    <input type="hidden" id="cspEmail">
+    <div class="form-group">
+      <label>New Salesperson</label>
+      <select id="cspSelect"><option value="">Select...</option></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('changeSpModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doChangeSp()">Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manual Booking -->
+<div class="modal-overlay" id="manualBookModal">
+  <div class="modal">
+    <h2>Create Manual Booking</h2>
+    <input type="hidden" id="mbEmail">
+    <input type="hidden" id="mbName">
+    <input type="hidden" id="mbCompany">
+    <div id="mbContactInfo" style="background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:16px;font-size:14px"></div>
+    <div class="form-group"><label>Select Slot</label><select id="mbSlot"><option value="">Select slot...</option></select></div>
+    <div class="form-group"><label>Primary Salesperson</label><select id="mbSp1"><option value="">Select...</option></select></div>
+    <div class="form-group"><label>Secondary Salesperson <span style="color:#94a3b8;font-weight:400">(optional)</span></label><select id="mbSp2"><option value="">None</option></select></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('manualBookModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doManualBook()">Create Booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- Template Editor -->
+<div class="modal-overlay" id="templateModal">
+  <div class="modal modal-xl">
+    <h2 id="tplModalTitle">Edit Template</h2>
+    <input type="hidden" id="tplName">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div class="form-group"><label>Subject</label><input type="text" id="tplSubject"></div>
+        <div class="form-group">
+          <label>Body <span style="color:#94a3b8;font-weight:400;font-size:11px">Variables: {{name}} {{company}} {{date}} {{time}} {{salesperson_name}} {{booking_link}} {{unsubscribe_link}} {{event_name}} {{event_dates}} {{event_venue}}</span></label>
+          <div id="tplQuill" style="height:280px;border:1.5px solid #e2e8f0;border-radius:8px"></div>
+        </div>
+        <div class="form-group">
+          <label>Send Test Email</label>
+          <div style="display:flex;gap:8px">
+            <input type="email" id="tplTestEmail" placeholder="your@email.com" style="flex:1">
+            <button class="btn btn-outline btn-sm" onclick="sendTestEmail()">Send Test</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="form-group"><label>Preview</label></div>
+        <div id="tplPreview" style="border:1.5px solid #e2e8f0;border-radius:8px;padding:16px;min-height:340px;font-size:13px;overflow-y:auto;background:#fff"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('templateModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTemplate()">Save Template</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Field -->
+<div class="modal-overlay" id="addFieldModal">
+  <div class="modal">
+    <h2 id="fieldModalTitle">Add Form Field</h2>
+    <input type="hidden" id="fld_id_orig">
+    <div class="form-group"><label>Field ID (unique, no spaces)</label><input type="text" id="fld_id" placeholder="e.g. company_size"></div>
+    <div class="form-group"><label>Label (shown on form)</label><input type="text" id="fld_label" placeholder="e.g. Company Size / 公司规模"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Field Type</label>
+        <select id="fld_type" onchange="toggleFieldOptions()">
+          <option value="text">Text</option>
+          <option value="email">Email</option>
+          <option value="tel">Phone</option>
+          <option value="textarea">Long Text</option>
+          <option value="select">Dropdown</option>
+          <option value="radio">Radio Buttons</option>
+          <option value="checkbox">Checkboxes</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Required?</label>
+        <select id="fld_required"><option value="yes">Yes</option><option value="no">No</option></select>
+      </div>
+    </div>
+    <div class="form-group" id="fld_options_group" style="display:none">
+      <label>Options (one per line)</label>
+      <textarea id="fld_options" rows="4" placeholder="Option 1&#10;Option 2&#10;Option 3"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('addFieldModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveField()">Save Field</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="max-width:400px">
+    <h2 id="confirmTitle">Confirm</h2>
+    <p id="confirmMsg" style="color:#64748b;font-size:14px;margin-bottom:8px"></p>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('confirmModal')">Cancel</button>
+      <button class="btn btn-danger" id="confirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+const N8N = 'https://n8n.okahh.com/webhook';
+const BOOKING_FORM_URL = window.location.origin.replace('/dashboard','') + '/booking/';
+// ─────────────────────────────────────────────────────────────────────────────
+
+let allContacts = [];
+let allStaff = [];
+let allSlots = [];
+let allFields = [];
+let quillEditor = null;
+let emailMode = 'managed';
+
+// ─── AUTH ────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const pw = document.getElementById('loginPw').value.trim();
+  if (!pw) return;
+  try {
+    const r = await fetch(N8N + '/v2-auth', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({password: pw})});
+    const d = await r.json();
+    if (d.success) {
+      sessionStorage.setItem('v2_auth', pw);
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      initApp();
+    } else {
+      document.getElementById('loginErr').textContent = 'Incorrect password';
+    }
+  } catch(e) {
+    document.getElementById('loginErr').textContent = 'Could not connect. Check your connection.';
+  }
+}
+
+async function initApp() {
+  await loadSettings();
+  loadContacts();
+  loadStaff();
+  loadSlots();
+  loadFormFields();
+  document.getElementById('formLinkBtn').href = BOOKING_FORM_URL;
+  document.getElementById('sidebarUrl').textContent = window.location.hostname;
+}
+
+function getAuth() { return sessionStorage.getItem('v2_auth') || ''; }
+
+// ─── API HELPER ───────────────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const res = await fetch(N8N + path, {
+    headers: {'Content-Type': 'application/json', 'X-Auth': getAuth(), ...opts.headers},
+    ...opts
+  });
+  return res.json();
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'pending') loadPending();
+  if (name === 'confirmed') loadConfirmed();
+  if (name === 'templates') loadTemplates();
+  if (name === 'slots') loadSlots();
+  if (name === 'team') loadStaff();
+  if (name === 'formbuilder') loadFormFields();
+  if (name === 'settings') loadSettings();
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+let settingsCache = {};
+async function loadSettings() {
+  try {
+    const d = await api('/v2-settings');
+    settingsCache = d.settings || {};
+    const s = settingsCache;
+    setVal('s_event_name', s.event_name);
+    setVal('s_event_dates', s.event_dates);
+    setVal('s_event_venue', s.event_venue);
+    setVal('s_from_name', s.from_name);
+    setVal('s_from_email', s.from_email);
+    setVal('s_reply_to', s.reply_to);
+    setVal('s_resend_api_key', s.resend_api_key);
+    setVal('s_brand_name', s.brand_name);
+    setVal('s_logo_url', s.logo_url);
+    if (s.brand_color) {
+      document.getElementById('s_brand_color').value = s.brand_color;
+      setVal('s_brand_color_hex', s.brand_color);
+    }
+    const hasOwnKey = s.resend_api_key && s.resend_api_key.trim();
+    selectEmailMode(hasOwnKey ? 'own' : 'managed');
+    const brand = s.brand_name || 'Booking System';
+    const event = s.event_name || '';
+    document.getElementById('sidebarBrand').textContent = brand;
+    document.getElementById('sidebarEvent').textContent = event;
+    document.getElementById('loginBrand').textContent = brand;
+    document.title = brand + ' Dashboard';
+  } catch(e) {}
+}
+
+function setVal(id, val) { const el = document.getElementById(id); if (el && val) el.value = val; }
+
+function selectEmailMode(mode) {
+  emailMode = mode;
+  document.getElementById('modeManaged').classList.toggle('selected', mode === 'managed');
+  document.getElementById('modeOwn').classList.toggle('selected', mode === 'own');
+  document.getElementById('radioManaged').style.background = mode === 'managed' ? '#3b82f6' : '';
+  document.getElementById('radioOwn').style.background = mode === 'own' ? '#3b82f6' : '';
+  document.getElementById('ownEmailFields').style.display = mode === 'own' ? 'block' : 'none';
+}
+
+async function saveSettings(keys) {
+  const payload = {};
+  keys.forEach(k => { const el = document.getElementById('s_' + k); if (el) payload[k] = el.value; });
+  if (keys.includes('brand_color')) payload.brand_color = document.getElementById('s_brand_color').value;
+  await api('/v2-save-settings', {method:'POST', body: JSON.stringify(payload)});
+  toast('Settings saved', 'success');
+  await loadSettings();
+}
+
+async function saveEmailSettings() {
+  const payload = {
+    from_name: document.getElementById('s_from_name').value,
+    reply_to: document.getElementById('s_reply_to').value,
+  };
+  if (emailMode === 'own') {
+    payload.from_email = document.getElementById('s_from_email').value;
+    payload.resend_api_key = document.getElementById('s_resend_api_key').value;
+  } else {
+    payload.resend_api_key = '';
+    payload.from_email = '';
+  }
+  await api('/v2-save-settings', {method:'POST', body: JSON.stringify(payload)});
+  toast('Email settings saved', 'success');
+}
+
+async function changePassword() {
+  const np = document.getElementById('s_new_pw').value;
+  const cp = document.getElementById('s_confirm_pw').value;
+  if (!np) return toast('Enter a new password', 'error');
+  if (np !== cp) return toast('Passwords do not match', 'error');
+  await api('/v2-save-settings', {method:'POST', body: JSON.stringify({dashboard_password: np})});
+  sessionStorage.setItem('v2_auth', np);
+  toast('Password updated', 'success');
+  document.getElementById('s_new_pw').value = '';
+  document.getElementById('s_confirm_pw').value = '';
+}
+
+function syncColorHex() {
+  const h = document.getElementById('s_brand_color_hex').value;
+  if (/^#[0-9a-f]{6}$/i.test(h)) document.getElementById('s_brand_color').value = h;
+}
+
+// ─── CONTACTS ─────────────────────────────────────────────────────────────────
+async function loadContacts() {
+  const d = await api('/v2-contacts');
+  allContacts = (d.contacts || []).filter(c => c.status !== 'deleted');
+  renderContacts(allContacts);
+  renderContactStats(allContacts);
+}
+
+function renderContactStats(contacts) {
+  const stats = {total:0,not_sent:0,sent:0,opened:0,clicked:0,booked:0};
+  contacts.forEach(c => {
+    stats.total++;
+    const s = c.status || 'not_sent';
+    if (s === 'booked') stats.booked++;
+    else if (s === 'clicked') stats.clicked++;
+    else if (s === 'opened') stats.opened++;
+    else if (s === 'sent') stats.sent++;
+    else stats.not_sent++;
+  });
+  document.getElementById('contactStats').innerHTML = `
+    <div class="stat-card"><div class="label">Total</div><div class="value">${stats.total}</div></div>
+    <div class="stat-card"><div class="label">Not Sent</div><div class="value amber">${stats.not_sent}</div></div>
+    <div class="stat-card"><div class="label">Invited</div><div class="value blue">${stats.sent}</div></div>
+    <div class="stat-card"><div class="label">Opened</div><div class="value blue">${stats.opened}</div></div>
+    <div class="stat-card"><div class="label">Clicked</div><div class="value green">${stats.clicked}</div></div>
+    <div class="stat-card"><div class="label">Booked</div><div class="value green">${stats.booked}</div></div>`;
+}
+
+function statusBadge(s) {
+  const map = {not_sent:'badge-gray Not Sent',sent:'badge-blue Invited',opened:'badge-amber Opened',clicked:'badge-purple Clicked',booked:'badge-green Booked',unsubscribed:'badge-red Unsub',deleted:'badge-red Deleted'};
+  const [cls,lbl] = (map[s]||'badge-gray Unknown').split(' ');
+  return `<span class="badge ${cls}">${lbl}</span>`;
+}
+
+function renderContacts(list) {
+  const tb = document.getElementById('contactsTable');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="5"><div class="empty-state"><p>No contacts yet. Add your first contact above.</p></div></td></tr>'; return; }
+  tb.innerHTML = list.map(c => `
+    <tr>
+      <td><div style="font-weight:600;color:#1a202c">${esc(c.name||'')}</div><div style="font-size:12px;color:#64748b">${esc(c.email||'')}</div></td>
+      <td>${esc(c.company||'—')}</td>
+      <td>${statusBadge(c.status||'not_sent')}</td>
+      <td style="font-size:12px;color:#64748b">${c.invite_sent_at ? fmtDate(c.invite_sent_at) : '—'}</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${(!c.invite_sent || c.invite_sent==='no') ? `<button class="btn btn-blue btn-xs" onclick="inviteOne('${esc(c.email)}','${esc(c.name)}','${esc(c.company||'')}')">Invite</button>` : `<button class="btn btn-outline btn-xs" onclick="remindOne('${esc(c.email)}','${esc(c.name)}','${esc(c.company||'')}')">Remind</button>`}
+          <button class="btn btn-outline btn-xs" onclick="openManualBook('${esc(c.email)}','${esc(c.name)}','${esc(c.company||'')}')">Book</button>
+          <button class="btn btn-danger btn-xs" onclick="deleteContact('${esc(c.email)}','${esc(c.name)}')">Del</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function filterContacts(q) {
+  const f = allContacts.filter(c => (c.name+c.email+c.company).toLowerCase().includes(q.toLowerCase()));
+  renderContacts(f);
+}
+
+async function addContact() {
+  const body = {name: v('ac_name'), email: v('ac_email'), company: v('ac_company'), title: v('ac_title'), notes: v('ac_notes')};
+  if (!body.email) return toast('Email required', 'error');
+  await api('/v2-add-contact', {method:'POST', body: JSON.stringify(body)});
+  toast('Contact added', 'success');
+  closeModal('addContactModal');
+  ['ac_name','ac_email','ac_company','ac_title','ac_notes'].forEach(id => document.getElementById(id).value = '');
+  loadContacts();
+}
+
+async function inviteOne(email, name, company) {
+  await api('/v2-invite', {method:'POST', body: JSON.stringify({email, name, company})});
+  toast('Invite sent to ' + email, 'success');
+  loadContacts();
+}
+
+async function remindOne(email, name, company) {
+  await api('/v2-remind', {method:'POST', body: JSON.stringify({email, name, company})});
+  toast('Reminder sent to ' + email, 'success');
+}
+
+async function inviteAll() {
+  const res = await api('/v2-invite-all', {method:'POST', body: JSON.stringify({})});
+  toast('Inviting ' + (res.sent||0) + ' contacts...', 'success');
+  setTimeout(loadContacts, 3000);
+}
+
+function deleteContact(email, name) {
+  showConfirm('Delete Contact', `Remove ${name} (${email})? This cannot be undone.`, async () => {
+    await api('/v2-delete-contact', {method:'POST', body: JSON.stringify({email})});
+    toast('Contact deleted', 'success');
+    loadContacts();
+  });
+}
+
+// ─── PENDING ─────────────────────────────────────────────────────────────────
+async function loadPending() {
+  document.getElementById('pendingList').innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
+  const d = await api('/v2-pending');
+  const bookings = d.bookings || [];
+  const el = document.getElementById('pendingList');
+  if (!bookings.length) { el.innerHTML = '<div class="empty-state"><p>No pending bookings</p></div>'; return; }
+  el.innerHTML = bookings.map(b => `
+    <div class="card" style="margin-bottom:12px">
+      <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-weight:700;font-size:15px;color:#1a202c">${esc(b.client_name||b.name||'')} <span style="font-weight:400;color:#64748b;font-size:13px">${esc(b.company||'')}</span></div>
+          <div style="font-size:13px;color:#64748b;margin-top:4px">${esc(b.email||'')} · ${fmtDate(b.date)} ${b.time||''}</div>
+          ${b.topics ? `<div style="font-size:12px;color:#94a3b8;margin-top:2px">Topics: ${esc(b.topics)}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:8px">
+          ${b.slot_status==='taken'?'<span class="badge badge-red">⚠ Conflict</span>':''}
+          <button class="btn btn-primary btn-sm" onclick="openAssign('${esc(JSON.stringify(b))}')">Assign SP</button>
+          <button class="btn btn-danger btn-sm" onclick="cancelPending('${esc(b.email)}','${esc(b.date)} ${b.time||''}')">Cancel</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openAssign(bJson) {
+  const b = JSON.parse(bJson);
+  document.getElementById('assignBookingId').value = b.booking_id || '';
+  document.getElementById('assignEmail').value = b.email || '';
+  document.getElementById('assignSlotId').value = b.slot_Id || b.slot_id || '';
+  document.getElementById('assignBookingInfo').innerHTML = `<strong>${esc(b.client_name||b.name||'')}</strong> — ${esc(b.company||'')} <br><small style="color:#64748b">${fmtDate(b.date)} ${b.time||''} · ${esc(b.email||'')}</small>`;
+  populateSpSelects('assignSp1','assignSp2');
+  openModal('assignModal');
+}
+
+async function doAssign() {
+  const sp1 = document.getElementById('assignSp1').value;
+  if (!sp1) return toast('Select a salesperson', 'error');
+  const spData = allStaff.find(s => s.salesperson_email === sp1 || s.email === sp1) || {};
+  const sp2 = document.getElementById('assignSp2').value;
+  const sp2Data = allStaff.find(s => s.salesperson_email === sp2 || s.email === sp2) || {};
+  await api('/v2-assign', {method:'POST', body: JSON.stringify({
+    booking_id: document.getElementById('assignBookingId').value,
+    email: document.getElementById('assignEmail').value,
+    slot_id: document.getElementById('assignSlotId').value,
+    salesperson_name: spData.salesperson_name || spData.name || sp1,
+    salesperson_email: sp1,
+    salesperson_name_2: sp2Data.salesperson_name || sp2Data.name || '',
+    salesperson_email_2: sp2 || ''
+  })});
+  toast('Booking confirmed & emails sent', 'success');
+  closeModal('assignModal');
+  loadPending();
+}
+
+async function cancelPending(email, slot) {
+  showConfirm('Cancel Booking', `Cancel booking for ${email} (${slot})?`, async () => {
+    await api('/v2-cancel-pending', {method:'POST', body: JSON.stringify({email})});
+    toast('Pending booking cancelled', 'success');
+    loadPending();
+  });
+}
+
+// ─── CONFIRMED ────────────────────────────────────────────────────────────────
+async function loadConfirmed() {
+  const d = await api('/v2-bookings');
+  const bookings = (d.bookings || []).filter(b => b.status === 'confirmed');
+  const tb = document.getElementById('confirmedTable');
+  if (!bookings.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>No confirmed bookings yet</p></div></td></tr>'; return; }
+  tb.innerHTML = bookings.map(b => `
+    <tr>
+      <td><div style="font-weight:600">${fmtDate(b.date)}</div><div style="font-size:12px;color:#64748b">${b.time||''}</div></td>
+      <td><div style="font-weight:600">${esc(b.client_name||b.name||'')}</div><div style="font-size:12px;color:#64748b">${esc(b.email||'')}</div></td>
+      <td>${esc(b.company||'—')}</td>
+      <td>${esc(b.salesperson_name||'—')}</td>
+      <td><span class="badge badge-green">Confirmed</span></td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-xs" onclick="openReschedule('${esc(b.email)}','confirmed')">Reschedule</button>
+          <button class="btn btn-outline btn-xs" onclick="openChangeSp('${esc(b.email)}')">Change SP</button>
+          <button class="btn btn-danger btn-xs" onclick="cancelConfirmed('${esc(b.email)}','${esc(b.date)}')">Cancel</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function openReschedule(email, type) {
+  document.getElementById('rsEmail').value = email;
+  document.getElementById('rsType').value = type;
+  const b = [...allContacts].find(c => c.email === email) || {};
+  document.getElementById('rsCurrentInfo').innerHTML = `Rescheduling booking for <strong>${email}</strong>`;
+  const sel = document.getElementById('rsNewSlot');
+  sel.innerHTML = '<option value="">Select new slot...</option>';
+  allSlots.filter(s => s.Status === 'available').forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.slot_Id;
+    opt.textContent = `${fmtDate(s.date)} ${s.time} (${s.booked_count||0}/${s.capacity||1})`;
+    sel.appendChild(opt);
+  });
+  openModal('rescheduleModal');
+}
+
+async function doReschedule() {
+  const newSlot = document.getElementById('rsNewSlot').value;
+  if (!newSlot) return toast('Select a slot', 'error');
+  const type = document.getElementById('rsType').value;
+  const email = document.getElementById('rsEmail').value;
+  const ep = type === 'confirmed' ? '/v2-reschedule-confirmed' : '/v2-reschedule-pending';
+  const slot = allSlots.find(s => s.slot_Id === newSlot) || {};
+  await api(ep, {method:'POST', body: JSON.stringify({email, new_slot_id: newSlot, new_date: slot.date, new_time: slot.time})});
+  toast('Booking rescheduled', 'success');
+  closeModal('rescheduleModal');
+  if (type === 'confirmed') loadConfirmed(); else loadPending();
+}
+
+function openChangeSp(email) {
+  document.getElementById('cspEmail').value = email;
+  populateSpSelects('cspSelect', null);
+  openModal('changeSpModal');
+}
+
+async function doChangeSp() {
+  const sp = document.getElementById('cspSelect').value;
+  if (!sp) return toast('Select a salesperson', 'error');
+  const spData = allStaff.find(s => s.salesperson_email === sp || s.email === sp) || {};
+  await api('/v2-change-sp', {method:'POST', body: JSON.stringify({email: document.getElementById('cspEmail').value, salesperson_name: spData.salesperson_name||sp, salesperson_email: sp})});
+  toast('Salesperson updated', 'success');
+  closeModal('changeSpModal');
+  loadConfirmed();
+}
+
+async function cancelConfirmed(email, date) {
+  showConfirm('Cancel Confirmed Booking', `Cancel the confirmed booking for ${email} on ${fmtDate(date)}? The customer will be notified.`, async () => {
+    await api('/v2-cancel-confirmed', {method:'POST', body: JSON.stringify({email})});
+    toast('Booking cancelled', 'success');
+    loadConfirmed();
+  });
+}
+
+// ─── MANUAL BOOKING ──────────────────────────────────────────────────────────
+function openManualBook(email, name, company) {
+  document.getElementById('mbEmail').value = email;
+  document.getElementById('mbName').value = name;
+  document.getElementById('mbCompany').value = company;
+  document.getElementById('mbContactInfo').innerHTML = `<strong>${esc(name)}</strong> · ${esc(company)} · ${esc(email)}`;
+  const sel = document.getElementById('mbSlot');
+  sel.innerHTML = '<option value="">Select slot...</option>';
+  allSlots.filter(s => s.Status === 'available').forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.slot_Id;
+    opt.textContent = `${fmtDate(s.date)} ${s.time}`;
+    sel.appendChild(opt);
+  });
+  populateSpSelects('mbSp1','mbSp2');
+  openModal('manualBookModal');
+}
+
+async function doManualBook() {
+  const slot = document.getElementById('mbSlot').value;
+  const sp1 = document.getElementById('mbSp1').value;
+  if (!slot) return toast('Select a slot', 'error');
+  if (!sp1) return toast('Select a salesperson', 'error');
+  const slotData = allSlots.find(s => s.slot_Id === slot) || {};
+  const sp1Data = allStaff.find(s => s.salesperson_email === sp1 || s.email === sp1) || {};
+  const sp2 = document.getElementById('mbSp2').value;
+  const sp2Data = allStaff.find(s => s.salesperson_email === sp2 || s.email === sp2) || {};
+  await api('/v2-manual-booking', {method:'POST', body: JSON.stringify({
+    email: document.getElementById('mbEmail').value,
+    client_name: document.getElementById('mbName').value,
+    company: document.getElementById('mbCompany').value,
+    slot_id: slot, date: slotData.date, time: slotData.time,
+    salesperson_name: sp1Data.salesperson_name || sp1,
+    salesperson_email: sp1,
+    salesperson_name_2: sp2Data.salesperson_name || '',
+    salesperson_email_2: sp2 || ''
+  })});
+  toast('Manual booking created', 'success');
+  closeModal('manualBookModal');
+  loadConfirmed();
+}
+
+// ─── TEMPLATES ────────────────────────────────────────────────────────────────
+async function loadTemplates() {
+  document.getElementById('templatesList').innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
+  const d = await api('/v2-templates');
+  const tpls = (d.templates || []).filter(t => t.subject !== '__deleted__');
+  const el = document.getElementById('templatesList');
+  if (!tpls.length) { el.innerHTML = '<div class="empty-state"><p>No templates found. Check your Google Sheet Template tab.</p></div>'; return; }
+  el.innerHTML = `<div style="display:grid;gap:12px">${tpls.map(t => `
+    <div class="card">
+      <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-weight:700;color:#1a202c">${esc(t.template_name||'')}</div>
+          <div style="font-size:13px;color:#64748b;margin-top:2px">${esc(t.subject||'')}</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="openTemplate('${esc(t.template_name)}','${esc(t.subject)}',${JSON.stringify(t.body||'').replace(/'/g,"&#39;")})">Edit</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function openTemplate(name, subject, body) {
+  document.getElementById('tplModalTitle').textContent = 'Edit: ' + name;
+  document.getElementById('tplName').value = name;
+  document.getElementById('tplSubject').value = subject;
+  if (!quillEditor) {
+    quillEditor = new Quill('#tplQuill', {theme:'snow', modules:{toolbar:[[{header:[1,2,3,false]}],['bold','italic','underline'],['link'],['clean']]}});
+    quillEditor.on('text-change', updateTplPreview);
+  }
+  quillEditor.root.innerHTML = body || '';
+  updateTplPreview();
+  openModal('templateModal');
+}
+
+function updateTplPreview() {
+  const html = quillEditor ? quillEditor.root.innerHTML : '';
+  document.getElementById('tplPreview').innerHTML = html;
+}
+
+async function saveTemplate() {
+  const name = document.getElementById('tplName').value;
+  const subject = document.getElementById('tplSubject').value;
+  const body = quillEditor ? quillEditor.root.innerHTML : '';
+  await api('/v2-save-template', {method:'POST', body: JSON.stringify({template_name: name, subject, body})});
+  toast('Template saved', 'success');
+  closeModal('templateModal');
+  loadTemplates();
+}
+
+async function sendTestEmail() {
+  const to = document.getElementById('tplTestEmail').value;
+  if (!to) return toast('Enter a test email address', 'error');
+  const subject = document.getElementById('tplSubject').value;
+  const body = quillEditor ? quillEditor.root.innerHTML : '';
+  await api('/v2-send-test-email', {method:'POST', body: JSON.stringify({to, subject, body})});
+  toast('Test email sent to ' + to, 'success');
+}
+
+// ─── SLOTS ────────────────────────────────────────────────────────────────────
+async function loadSlots() {
+  const d = await api('/v2-slots');
+  allSlots = d.slots || [];
+  renderSlots();
+}
+
+function renderSlots() {
+  const el = document.getElementById('slotsList');
+  if (!allSlots.length) { el.innerHTML = '<div class="empty-state"><p>No slots yet. Add your first slot.</p></div>'; return; }
+  const sorted = [...allSlots].sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+  el.innerHTML = sorted.map(s => {
+    const booked = parseInt(s.booked_count||0);
+    const cap = parseInt(s.capacity||1);
+    const pct = Math.min(100, Math.round(booked/cap*100));
+    const barCls = pct >= 100 ? 'full' : pct >= 70 ? 'warn' : '';
+    return `<div class="slot-item">
+      <div class="slot-info">
+        <div class="slot-time">${fmtDate(s.date)} · ${s.time||''}</div>
+        <div class="slot-cap">${booked}/${cap} booked · ${s.Status||'available'}</div>
+      </div>
+      <div class="slot-bar"><div class="slot-bar-fill ${barCls}" style="width:${pct}%"></div></div>
+      <button class="btn btn-danger btn-xs" onclick="deleteSlot('${esc(s.slot_Id)}','${esc(s.date)}')">Del</button>
+    </div>`;
+  }).join('');
+}
+
+async function addSlot() {
+  const date = document.getElementById('newSlotDate').value;
+  const time = document.getElementById('newSlotTime').value;
+  const cap = document.getElementById('newSlotCap').value;
+  if (!date||!time) return toast('Date and time required', 'error');
+  await api('/v2-add-slot', {method:'POST', body: JSON.stringify({date, time, capacity: cap||1})});
+  toast('Slot added', 'success');
+  document.getElementById('newSlotDate').value = '';
+  document.getElementById('newSlotTime').value = '';
+  loadSlots();
+}
+
+async function deleteSlot(slotId, date) {
+  showConfirm('Delete Slot', `Delete slot on ${fmtDate(date)}?`, async () => {
+    await api('/v2-delete-slot', {method:'POST', body: JSON.stringify({slot_id: slotId})});
+    toast('Slot deleted', 'success');
+    loadSlots();
+  });
+}
+
+// ─── TEAM ─────────────────────────────────────────────────────────────────────
+async function loadStaff() {
+  const d = await api('/v2-staff');
+  allStaff = d.staff || [];
+  renderStaff();
+}
+
+function renderStaff() {
+  const tb = document.getElementById('staffTable');
+  if (!allStaff.length) { tb.innerHTML = '<tr><td colspan="3"><div class="empty-state"><p>No team members yet</p></div></td></tr>'; return; }
+  tb.innerHTML = allStaff.map(s => {
+    const name = s.salesperson_name || s.name || '';
+    const email = s.salesperson_email || s.email || '';
+    return `<tr><td style="font-weight:600">${esc(name)}</td><td>${esc(email)}</td><td><button class="btn btn-danger btn-xs" onclick="deleteStaff('${esc(email)}','${esc(name)}')">Del</button></td></tr>`;
+  }).join('');
+}
+
+async function addStaff() {
+  const name = document.getElementById('newStaffName').value.trim();
+  const email = document.getElementById('newStaffEmail').value.trim();
+  if (!name||!email) return toast('Name and email required', 'error');
+  await api('/v2-add-staff', {method:'POST', body: JSON.stringify({name, email})});
+  toast('Team member added', 'success');
+  document.getElementById('newStaffName').value = '';
+  document.getElementById('newStaffEmail').value = '';
+  loadStaff();
+}
+
+async function deleteStaff(email, name) {
+  showConfirm('Remove Team Member', `Remove ${name} from the team?`, async () => {
+    await api('/v2-delete-staff', {method:'POST', body: JSON.stringify({email})});
+    toast('Team member removed', 'success');
+    loadStaff();
+  });
+}
+
+function populateSpSelects(...ids) {
+  ids.forEach(id => {
+    if (!id) return;
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const first = sel.options[0].value === '' ? sel.options[0].text : (id.includes('2') ? 'None' : 'Select...');
+    sel.innerHTML = `<option value="">${first}</option>`;
+    allStaff.forEach(s => {
+      const email = s.salesperson_email || s.email || '';
+      const name = s.salesperson_name || s.name || '';
+      sel.innerHTML += `<option value="${esc(email)}">${esc(name)}</option>`;
+    });
+  });
+}
+
+// ─── FORM BUILDER ────────────────────────────────────────────────────────────
+async function loadFormFields() {
+  const d = await api('/v2-form-fields');
+  allFields = (d.fields || []).sort((a,b) => parseInt(a.order||0) - parseInt(b.order||0));
+  const s = await api('/v2-settings');
+  const cfg = s.settings || {};
+  setVal('fbTitle', cfg.form_title);
+  setVal('fbIntro', cfg.form_intro);
+  setVal('fbSubmitBtn', cfg.form_submit_btn);
+  setVal('fbThankyou', cfg.form_thankyou);
+  renderFields();
+  renderFormPreview();
+}
+
+function renderFields() {
+  const el = document.getElementById('fieldsList');
+  if (!allFields.length) { el.innerHTML = '<div class="empty-state"><p>No fields yet. Add your first field above.</p></div>'; return; }
+  el.innerHTML = allFields.map((f,i) => `
+    <div class="field-item ${f.enabled==='no'?'disabled-field':''}">
+      <div class="field-drag">⠿</div>
+      <div class="field-info">
+        <div class="field-label">${esc(f.label||f.field_id||'')}</div>
+        <div class="field-meta">${f.type||'text'} · ${f.required==='yes'?'Required':'Optional'} ${f.options?'· '+f.options:''}</div>
+      </div>
+      <div class="field-actions">
+        <button class="btn btn-outline btn-xs" onclick="moveField(${i},-1)" ${i===0?'disabled':''}>↑</button>
+        <button class="btn btn-outline btn-xs" onclick="moveField(${i},1)" ${i===allFields.length-1?'disabled':''}>↓</button>
+        <button class="btn btn-outline btn-xs" onclick="editField(${i})">Edit</button>
+        <button class="btn btn-danger btn-xs" onclick="deleteField('${esc(f.field_id)}')">Del</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderFormPreview() {
+  const title = document.getElementById('fbTitle')?.value || 'Book Your Appointment';
+  const intro = document.getElementById('fbIntro')?.value || '';
+  const btn = document.getElementById('fbSubmitBtn')?.value || 'Submit';
+  let html = `<div style="font-family:sans-serif"><h3 style="font-size:15px;color:#0f1c2e;margin-bottom:6px">${esc(title)}</h3>`;
+  if (intro) html += `<p style="font-size:12px;color:#64748b;margin-bottom:12px">${esc(intro)}</p>`;
+  allFields.filter(f => f.enabled !== 'no').forEach(f => {
+    html += `<div style="margin-bottom:10px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">${esc(f.label||f.field_id)}${f.required==='yes'?' *':''}</label>`;
+    if (f.type==='textarea') html += `<textarea style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px" rows="2" disabled></textarea>`;
+    else if (f.type==='select') html += `<select style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px" disabled><option>${(f.options||'').split(',')[0]||'Select...'}</option></select>`;
+    else if (f.type==='radio') html += (f.options||'').split(',').map(o=>`<label style="display:flex;gap:6px;font-size:12px;margin-bottom:4px"><input type="radio" disabled> ${esc(o.trim())}</label>`).join('');
+    else html += `<input type="${f.type||'text'}" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px" disabled>`;
+    html += '</div>';
+  });
+  html += `<button style="background:#0f1c2e;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:13px;cursor:default">${esc(btn)}</button></div>`;
+  document.getElementById('formPreview').innerHTML = html;
+}
+
+async function saveFormHeader() {
+  await api('/v2-save-settings', {method:'POST', body: JSON.stringify({
+    form_title: document.getElementById('fbTitle').value,
+    form_intro: document.getElementById('fbIntro').value,
+    form_submit_btn: document.getElementById('fbSubmitBtn').value,
+    form_thankyou: document.getElementById('fbThankyou').value
+  })});
+  toast('Form header saved', 'success');
+  renderFormPreview();
+}
+
+function toggleFieldOptions() {
+  const t = document.getElementById('fld_type').value;
+  document.getElementById('fld_options_group').style.display = ['select','radio','checkbox'].includes(t) ? 'block' : 'none';
+}
+
+function editField(idx) {
+  const f = allFields[idx];
+  document.getElementById('fieldModalTitle').textContent = 'Edit Field';
+  document.getElementById('fld_id_orig').value = f.field_id;
+  document.getElementById('fld_id').value = f.field_id;
+  document.getElementById('fld_label').value = f.label || '';
+  document.getElementById('fld_type').value = f.type || 'text';
+  document.getElementById('fld_required').value = f.required || 'yes';
+  document.getElementById('fld_options').value = (f.options||'').split(',').join('\n');
+  toggleFieldOptions();
+  openModal('addFieldModal');
+}
+
+async function saveField() {
+  const id = document.getElementById('fld_id').value.trim().replace(/\s+/g,'_');
+  const label = document.getElementById('fld_label').value.trim();
+  if (!id||!label) return toast('ID and label required', 'error');
+  const opts = document.getElementById('fld_options').value.split('\n').filter(Boolean).join(',');
+  const orig = document.getElementById('fld_id_orig').value;
+  const order = orig ? (allFields.find(f=>f.field_id===orig)?.order||99) : allFields.length+1;
+  await api('/v2-save-form-field', {method:'POST', body: JSON.stringify({
+    field_id: id, orig_field_id: orig||id, label,
+    type: document.getElementById('fld_type').value,
+    required: document.getElementById('fld_required').value,
+    options: opts, order, enabled: 'yes'
+  })});
+  toast('Field saved', 'success');
+  closeModal('addFieldModal');
+  document.getElementById('fld_id_orig').value = '';
+  loadFormFields();
+}
+
+async function moveField(idx, dir) {
+  const fields = [...allFields];
+  const target = idx + dir;
+  if (target < 0 || target >= fields.length) return;
+  [fields[idx], fields[target]] = [fields[target], fields[idx]];
+  const reorder = fields.map((f,i) => ({field_id: f.field_id, order: i+1}));
+  await api('/v2-reorder-fields', {method:'POST', body: JSON.stringify({fields: reorder})});
+  loadFormFields();
+}
+
+async function deleteField(fieldId) {
+  showConfirm('Delete Field', `Remove field "${fieldId}" from your form?`, async () => {
+    await api('/v2-delete-form-field', {method:'POST', body: JSON.stringify({field_id: fieldId})});
+    toast('Field removed', 'success');
+    loadFormFields();
+  });
+}
+
+// ─── IMPORT ───────────────────────────────────────────────────────────────────
+function setImportMode(mode) {
+  document.getElementById('impPastePanel').style.display = mode==='paste'?'block':'none';
+  document.getElementById('impCsvPanel').style.display = mode==='csv'?'block':'none';
+  document.getElementById('impTabPaste').style.cssText = mode==='paste'?'font-weight:700;border-color:#3b82f6;color:#3b82f6':'';
+  document.getElementById('impTabCsv').style.cssText = mode==='csv'?'font-weight:700;border-color:#3b82f6;color:#3b82f6':'';
+}
+
+async function doImport() {
+  const paste = document.getElementById('importPaste').value.trim();
+  const file = document.getElementById('importCsvFile').files[0];
+  let contacts = [];
+  if (paste) {
+    contacts = paste.split('\n').filter(Boolean).map(line => {
+      const parts = line.split(',').map(p=>p.trim());
+      return {name:parts[0]||'',email:parts[1]||'',company:parts[2]||'',title:parts[3]||''};
+    }).filter(c=>c.email);
+  } else if (file) {
+    const text = await file.text();
+    const rows = text.split('\n');
+    const headers = rows[0].split(',').map(h=>h.trim().toLowerCase());
+    contacts = rows.slice(1).filter(Boolean).map(row => {
+      const vals = row.split(',').map(v=>v.trim().replace(/^"|"$/g,''));
+      const obj = {};
+      headers.forEach((h,i) => obj[h] = vals[i]||'');
+      return {name:obj.name||'',email:obj.email||'',company:obj.company||'',title:obj.title||''};
+    }).filter(c=>c.email);
+  }
+  if (!contacts.length) return toast('No valid contacts found', 'error');
+  let added = 0;
+  for (const c of contacts) {
+    await api('/v2-add-contact', {method:'POST', body: JSON.stringify(c)});
+    added++;
+  }
+  toast(`Imported ${added} contacts`, 'success');
+  closeModal('importModal');
+  loadContacts();
+}
+
+// ─── MODALS ───────────────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
+
+let confirmCallback = null;
+function showConfirm(title, msg, cb) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  confirmCallback = cb;
+  openModal('confirmModal');
+}
+document.getElementById('confirmBtn').onclick = () => { closeModal('confirmModal'); if(confirmCallback) confirmCallback(); };
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function v(id) { return (document.getElementById(id)||{}).value || ''; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(d) { if(!d) return '—'; try { return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); } catch(e){return d;} }
+
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = 'toast-item ' + type;
+  el.textContent = msg;
+  t.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+function togglePw(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'Hide'; }
+  else { inp.type = 'password'; btn.textContent = 'Show'; }
+}
+
+// ─── AUTO-CHECK AUTH ON LOAD ──────────────────────────────────────────────────
+(async function() {
+  const saved = sessionStorage.getItem('v2_auth');
+  if (saved) {
+    try {
+      const r = await fetch(N8N + '/v2-auth', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({password:saved})});
+      const d = await r.json();
+      if (d.success) {
+        document.getElementById('loginScreen').style.display='none';
+        document.getElementById('app').style.display='block';
+        initApp();
+        return;
+      }
+    } catch(e){}
+    sessionStorage.removeItem('v2_auth');
+  }
+})();
+</script>
+</body>
+</html>
