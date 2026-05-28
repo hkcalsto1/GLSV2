@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Booking Dashboard</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;color:#1a202c;min-height:100vh}
@@ -644,13 +643,17 @@ tr:hover td{background:#fafcff}
 <div class="modal-overlay" id="templateModal">
   <div class="modal modal-xl">
     <h2 id="tplModalTitle">Edit Template</h2>
+    <p id="tplModalDesc" style="font-size:13px;color:#64748b;margin:-4px 0 16px"></p>
     <input type="hidden" id="tplName">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
       <div>
-        <div class="form-group"><label>Subject</label><input type="text" id="tplSubject"></div>
         <div class="form-group">
-          <label>Body <span style="color:#94a3b8;font-weight:400;font-size:11px">Variables: {{name}} {{company}} {{date}} {{time}} {{salesperson_name}} {{booking_link}} {{unsubscribe_link}} {{event_name}} {{event_dates}} {{event_venue}}</span></label>
-          <div id="tplQuill" style="height:280px;border:1.5px solid #e2e8f0;border-radius:8px"></div>
+          <label>Subject Line</label>
+          <input type="text" id="tplSubject" oninput="updateTplPreview()">
+        </div>
+        <div class="form-group">
+          <label>Custom Message <span style="color:#94a3b8;font-weight:400;font-size:11px">— plain text, shown in the email body</span></label>
+          <textarea id="tplCustomMsg" rows="6" placeholder="Write a short message to your contact..." oninput="updateTplPreview()" style="width:100%;resize:vertical"></textarea>
         </div>
         <div class="form-group">
           <label>Send Test Email</label>
@@ -659,15 +662,16 @@ tr:hover td{background:#fafcff}
             <button class="btn btn-outline btn-sm" onclick="sendTestEmail()">Send Test</button>
           </div>
         </div>
+        <p style="font-size:12px;color:#94a3b8;margin:0">Event details, booking link, and branding are pulled from Settings automatically.</p>
       </div>
       <div>
         <div class="form-group"><label>Preview</label></div>
-        <div id="tplPreview" style="border:1.5px solid #e2e8f0;border-radius:8px;padding:16px;min-height:340px;font-size:13px;overflow-y:auto;background:#fff"></div>
+        <iframe id="tplPreview" style="width:100%;height:380px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff" frameborder="0"></iframe>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('templateModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveTemplate()">Save Template</button>
+      <button class="btn btn-primary" onclick="saveTemplate()">Save</button>
     </div>
   </div>
 </div>
@@ -720,7 +724,6 @@ tr:hover td{background:#fafcff}
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const N8N = 'https://n8n.okahh.com/webhook';
@@ -731,7 +734,6 @@ let allContacts = [];
 let allStaff = [];
 let allSlots = [];
 let allFields = [];
-let quillEditor = null;
 let emailMode = 'managed';
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -1152,24 +1154,53 @@ async function doManualBook() {
 }
 
 // ─── TEMPLATES ────────────────────────────────────────────────────────────────
+const TPL_DESCRIPTIONS = {
+  invite: 'Sent when you invite a contact — includes event details and booking link.',
+  reminder_manual: 'Sent when you manually remind a contact who hasn\'t booked yet.',
+  reminder_auto: 'Sent automatically 7 days, 1 day, and 1 hour before a confirmed meeting.',
+  sp_confirm: 'Sent to your salesperson when they are assigned to a booking.',
+  customer_confirm: 'Sent to the customer when their booking is confirmed.',
+  booking_received: 'Sent to the customer immediately after they submit the booking form.'
+};
+
+function buildEmailPreview(type, subject, customMsg) {
+  const s = settingsCache || {};
+  const bc = s.brand_color || '#0f1c2e';
+  const brand = s.from_name || s.brand_name || 'Booking System';
+  const logo = s.logo_url ? `<img src="${s.logo_url}" style="max-height:40px;max-width:160px;object-fit:contain">` : `<span style="color:#fff;font-size:18px;font-weight:700">${brand}</span>`;
+  const msg = customMsg ? `<p style="color:#374151;font-size:14px;line-height:1.7;margin:0 0 16px">${customMsg.replace(/\n/g,'<br>')}</p>` : '';
+  const eventBox = (s.event_name||s.event_dates||s.event_venue) ? `<div style="background:#f8fafc;border-radius:8px;padding:14px 16px;margin:16px 0;border-left:4px solid ${bc}">${s.event_name?`<p style="margin:0 0 6px;font-weight:600;color:#1a202c">${s.event_name}</p>`:''} ${s.event_dates?`<p style="margin:0 0 4px;font-size:13px;color:#374151">📅 ${s.event_dates}</p>`:''} ${s.event_venue?`<p style="margin:0;font-size:13px;color:#374151">📍 ${s.event_venue}</p>`:''}</div>` : '';
+  const cta = `<a href="#" style="display:inline-block;background:${bc};color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;margin:8px 0">Book Your Meeting Slot →</a>`;
+  const apptBox = `<div style="background:#f8fafc;border-radius:8px;padding:14px 16px;margin:16px 0"><p style="margin:0 0 6px;font-size:13px;color:#374151">📅 June 24, 2026 · 10:00</p><p style="margin:0 0 6px;font-size:13px;color:#374151">📍 ${s.event_venue||'Venue'}</p><p style="margin:0;font-size:13px;color:#374151">🤝 Your contact: Sales Name</p></div>`;
+  const greeting = `<p style="color:#374151;font-size:14px;line-height:1.7;margin:0 0 12px">Dear <strong>Contact Name</strong>,</p>`;
+
+  let content = '';
+  if (type === 'invite' || type === 'reminder_manual') content = greeting + msg + eventBox + cta;
+  else if (type === 'reminder_auto') content = greeting + `<p style="font-weight:700;color:${bc};font-size:15px;margin:0 0 12px">Your meeting is in 1 day</p>` + msg + apptBox;
+  else if (type === 'sp_confirm') content = greeting + `<p style="color:#374151;font-size:14px;margin:0 0 12px">You have been assigned a new meeting:</p>` + msg + `<div style="background:#f8fafc;border-radius:8px;padding:14px 16px;margin:16px 0"><p style="margin:0 0 6px;font-size:13px">👤 Contact Name (Company)</p><p style="margin:0 0 6px;font-size:13px">📅 June 24, 2026 · 10:00</p><p style="margin:0;font-size:13px">📍 ${s.event_venue||'Venue'}</p></div>`;
+  else if (type === 'customer_confirm') content = greeting + msg + apptBox;
+  else if (type === 'booking_received') content = greeting + msg + `<div style="background:#f8fafc;border-radius:8px;padding:14px 16px;margin:16px 0"><p style="margin:0 0 6px;font-size:13px;color:#374151">📅 June 24, 2026 · 10:00</p></div><p style="color:#64748b;font-size:13px;margin:0">You will receive a confirmation once a contact is assigned.</p>`;
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:16px;background:#f0f4f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table width="520" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)"><tr><td style="background:${bc};padding:20px 28px">${logo}</td></tr><tr><td style="padding:28px">${content}<p style="color:#374151;font-size:13px;margin:24px 0 0">${brand} Team</p></td></tr><tr><td style="background:#f8fafc;padding:16px 28px;border-top:1px solid #e2e8f0"><p style="color:#94a3b8;font-size:11px;margin:0">${brand}${s.reply_to?' · '+s.reply_to:''} · <a href="#" style="color:#94a3b8">Unsubscribe</a></p></td></tr></table></td></tr></table></body></html>`;
+}
+
 async function loadTemplates() {
   document.getElementById('templatesList').innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
   try {
-  const d = await api('/v2-templates');
-  const tpls = (d.templates || []).filter(t => t.subject !== '__deleted__');
-  const el = document.getElementById('templatesList');
-  if (!tpls.length) { el.innerHTML = '<div class="empty-state"><p>No templates found. Check your Google Sheet Template tab.</p></div>'; return; }
-  window._tplCache = tpls;
-  el.innerHTML = `<div style="display:grid;gap:12px">${tpls.map((t,i) => `
-    <div class="card">
-      <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    const d = await api('/v2-templates');
+    const tpls = (d.templates || []).filter(t => t.subject !== '__deleted__');
+    const el = document.getElementById('templatesList');
+    if (!tpls.length) { el.innerHTML = '<div class="empty-state"><p>No templates yet. Add rows to the Template tab in your Google Sheet.</p></div>'; return; }
+    window._tplCache = tpls;
+    el.innerHTML = `<div style="display:grid;gap:10px">${tpls.map((t,i) => `
+      <div class="card" style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
         <div>
           <div style="font-weight:700;color:#1a202c">${esc(t.template_name||'')}</div>
-          <div style="font-size:13px;color:#64748b;margin-top:2px">${esc((t.subject||'').trim())}</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:2px">${esc(TPL_DESCRIPTIONS[t.template_name]||'')}</div>
+          <div style="font-size:13px;color:#64748b;margin-top:4px">Subject: ${esc((t.subject||'').trim())}</div>
         </div>
         <button class="btn btn-outline btn-sm" onclick="openTemplateByIndex(${i})">Edit</button>
-      </div>
-    </div>`).join('')}</div>`;
+      </div>`).join('')}</div>`;
   } catch(e) {
     document.getElementById('templatesList').innerHTML = '<div class="empty-state"><p>Failed to load templates. Refresh to retry.</p></div>';
   }
@@ -1178,31 +1209,32 @@ async function loadTemplates() {
 function openTemplateByIndex(i) {
   const t = (window._tplCache || [])[i];
   if (!t) return;
-  openTemplate(t.template_name || '', t.subject || '', t.body || '');
-}
-
-function openTemplate(name, subject, body) {
+  const name = t.template_name || '';
   document.getElementById('tplModalTitle').textContent = 'Edit: ' + name;
+  document.getElementById('tplModalDesc').textContent = TPL_DESCRIPTIONS[name] || '';
   document.getElementById('tplName').value = name;
-  document.getElementById('tplSubject').value = subject;
-  if (!quillEditor) {
-    quillEditor = new Quill('#tplQuill', {theme:'snow', modules:{toolbar:[[{header:[1,2,3,false]}],['bold','italic','underline'],['link'],['clean']]}});
-    quillEditor.on('text-change', updateTplPreview);
-  }
-  quillEditor.root.innerHTML = body || '';
+  document.getElementById('tplSubject').value = (t.subject || '').trim();
+  const rawBody = t.body || '';
+  const isHtml = /<[a-z]/i.test(rawBody);
+  const plainBody = isHtml ? rawBody.replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').trim() : rawBody.replace(/\\n/g,'\n').trim();
+  document.getElementById('tplCustomMsg').value = plainBody;
   updateTplPreview();
   openModal('templateModal');
 }
 
 function updateTplPreview() {
-  const html = quillEditor ? quillEditor.root.innerHTML : '';
-  document.getElementById('tplPreview').innerHTML = html;
+  const name = document.getElementById('tplName').value;
+  const subject = document.getElementById('tplSubject').value;
+  const msg = document.getElementById('tplCustomMsg').value;
+  const html = buildEmailPreview(name, subject, msg);
+  const frame = document.getElementById('tplPreview');
+  frame.srcdoc = html;
 }
 
 async function saveTemplate() {
   const name = document.getElementById('tplName').value;
   const subject = document.getElementById('tplSubject').value;
-  const body = quillEditor ? quillEditor.root.innerHTML : '';
+  const body = document.getElementById('tplCustomMsg').value;
   await api('/v2-save-template', {method:'POST', body: JSON.stringify({template_name: name, subject, body})});
   toast('Template saved', 'success');
   closeModal('templateModal');
@@ -1212,9 +1244,11 @@ async function saveTemplate() {
 async function sendTestEmail() {
   const to = document.getElementById('tplTestEmail').value;
   if (!to) return toast('Enter a test email address', 'error');
+  const name = document.getElementById('tplName').value;
   const subject = document.getElementById('tplSubject').value;
-  const body = quillEditor ? quillEditor.root.innerHTML : '';
-  await api('/v2-send-test-email', {method:'POST', body: JSON.stringify({to, subject, body})});
+  const customMsg = document.getElementById('tplCustomMsg').value;
+  const html = buildEmailPreview(name, subject, customMsg);
+  await api('/v2-test-email', {method:'POST', body: JSON.stringify({to, subject, html})});
   toast('Test email sent to ' + to, 'success');
 }
 
