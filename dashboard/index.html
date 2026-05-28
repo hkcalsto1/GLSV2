@@ -769,7 +769,7 @@ function getAuth() { return sessionStorage.getItem('v2_auth') || ''; }
 // ─── API HELPER ───────────────────────────────────────────────────────────────
 async function api(path, opts = {}) {
   const res = await fetch(N8N + path, {
-    headers: {'Content-Type': 'application/json', 'X-Auth': getAuth(), ...opts.headers},
+    headers: {'Content-Type': 'application/json', ...opts.headers},
     ...opts
   });
   return res.json();
@@ -1154,6 +1154,7 @@ async function doManualBook() {
 // ─── TEMPLATES ────────────────────────────────────────────────────────────────
 async function loadTemplates() {
   document.getElementById('templatesList').innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
+  try {
   const d = await api('/v2-templates');
   const tpls = (d.templates || []).filter(t => t.subject !== '__deleted__');
   const el = document.getElementById('templatesList');
@@ -1168,6 +1169,9 @@ async function loadTemplates() {
         <button class="btn btn-outline btn-sm" onclick="openTemplate('${esc(t.template_name)}','${esc(t.subject)}',${JSON.stringify(t.body||'').replace(/'/g,"&#39;")})">Edit</button>
       </div>
     </div>`).join('')}</div>`;
+  } catch(e) {
+    document.getElementById('templatesList').innerHTML = '<div class="empty-state"><p>Failed to load templates. Refresh to retry.</p></div>';
+  }
 }
 
 function openTemplate(name, subject, body) {
