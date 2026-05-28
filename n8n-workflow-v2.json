@@ -19,14 +19,14 @@
     },
     {
       "parameters": {
-        "jsCode": "var pw=$('Auth Webhook').first().json.body?.password||$('Auth Webhook').first().json.password||'';\\nvar rows=$input.all().map(i=>i.json);\\nvar stored='';\\nrows.forEach(function(r){if(r.key==='dashboard_password')stored=r.value||'';});\\nif(!stored)stored=process.env.GLS_DASHBOARD_PASSWORD||'GLS2026!';\\nreturn [{json:{success:pw===stored}}];"
+        "jsCode": "var body=$input.first().json.body||$input.first().json;\\nvar pw=body.password||'';\\nvar stored=process.env.GLS_DASHBOARD_PASSWORD||'GLS2026!';\\nreturn [{json:{success:pw===stored}}];"
       },
       "id": "auth-002",
       "name": "Check Password",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        400,
+        200,
         0
       ]
     },
@@ -3614,33 +3614,6 @@
           "name": "Google Sheets"
         }
       }
-    },
-    {
-      "parameters": {
-        "documentId": {
-          "mode": "id",
-          "value": "1fQ9_0mFIbOEiiKA1lnzOQqpLD0SbRKH0Qe6pXx6vLSk"
-        },
-        "sheetName": {
-          "mode": "name",
-          "value": "Settings"
-        },
-        "options": {}
-      },
-      "id": "auth-004",
-      "name": "Read Auth Settings",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [
-        200,
-        0
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "AeQwGHbDftGYpvZc",
-          "name": "Google Sheets"
-        }
-      }
     }
   ],
   "connections": {
@@ -3648,7 +3621,7 @@
       "main": [
         [
           {
-            "node": "Read Auth Settings",
+            "node": "Check Password",
             "type": "main",
             "index": 0
           }
@@ -4926,17 +4899,6 @@
           }
         ],
         []
-      ]
-    },
-    "Read Auth Settings": {
-      "main": [
-        [
-          {
-            "node": "Check Password",
-            "type": "main",
-            "index": 0
-          }
-        ]
       ]
     }
   },
