@@ -755,13 +755,13 @@ async function doLogin() {
 }
 
 async function initApp() {
-  await loadSettings();
+  document.getElementById('formLinkBtn').href = BOOKING_FORM_URL;
+  document.getElementById('sidebarUrl').textContent = window.location.hostname;
+  loadSettings();
   loadContacts();
   loadStaff();
   loadSlots();
   loadFormFields();
-  document.getElementById('formLinkBtn').href = BOOKING_FORM_URL;
-  document.getElementById('sidebarUrl').textContent = window.location.hostname;
 }
 
 function getAuth() { return sessionStorage.getItem('v2_auth') || ''; }
@@ -876,10 +876,14 @@ function syncColorHex() {
 
 // ─── CONTACTS ─────────────────────────────────────────────────────────────────
 async function loadContacts() {
-  const d = await api('/v2-contacts');
-  allContacts = (d.contacts || []).filter(c => c.status !== 'deleted');
-  renderContacts(allContacts);
-  renderContactStats(allContacts);
+  try {
+    const d = await api('/v2-contacts');
+    allContacts = (d.contacts || []).filter(c => c.status !== 'deleted');
+    renderContacts(allContacts);
+    renderContactStats(allContacts);
+  } catch(e) {
+    document.getElementById('contactsTable').innerHTML = '<tr><td colspan="5"><div class="empty-state"><p>Failed to load contacts. Refresh to retry.</p></div></td></tr>';
+  }
 }
 
 function renderContactStats(contacts) {
@@ -1205,9 +1209,20 @@ async function sendTestEmail() {
 
 // ─── SLOTS ────────────────────────────────────────────────────────────────────
 async function loadSlots() {
-  const d = await api('/v2-slots');
-  allSlots = d.slots || [];
-  renderSlots();
+  try {
+    const d = await api('/v2-slots');
+    allSlots = (d.slots || []).map(s => ({
+      ...s,
+      slot_Id: s.Slot_Id || s.slot_Id || '',
+      date: s.Date || s.date || '',
+      time: s.Time || s.time || '',
+      Status: s.Status || s.status || 'available',
+      capacity: parseInt(s['capacity '] || s.capacity || 1),
+    }));
+    renderSlots();
+  } catch(e) {
+    document.getElementById('slotsList').innerHTML = '<div class="empty-state"><p>Failed to load slots. Refresh to retry.</p></div>';
+  }
 }
 
 function renderSlots() {
@@ -1252,9 +1267,13 @@ async function deleteSlot(slotId, date) {
 
 // ─── TEAM ─────────────────────────────────────────────────────────────────────
 async function loadStaff() {
-  const d = await api('/v2-staff');
-  allStaff = d.staff || [];
-  renderStaff();
+  try {
+    const d = await api('/v2-staff');
+    allStaff = d.staff || [];
+    renderStaff();
+  } catch(e) {
+    document.getElementById('staffTable').innerHTML = '<tr><td colspan="3"><div class="empty-state"><p>Failed to load team. Refresh to retry.</p></div></td></tr>';
+  }
 }
 
 function renderStaff() {
@@ -1303,16 +1322,19 @@ function populateSpSelects(...ids) {
 
 // ─── FORM BUILDER ────────────────────────────────────────────────────────────
 async function loadFormFields() {
-  const d = await api('/v2-form-fields');
-  allFields = (d.fields || []).sort((a,b) => parseInt(a.order||0) - parseInt(b.order||0));
-  const s = await api('/v2-settings');
-  const cfg = s.settings || {};
-  setVal('fbTitle', cfg.form_title);
-  setVal('fbIntro', cfg.form_intro);
-  setVal('fbSubmitBtn', cfg.form_submit_btn);
-  setVal('fbThankyou', cfg.form_thankyou);
-  renderFields();
-  renderFormPreview();
+  try {
+    const [df, ds] = await Promise.all([api('/v2-form-fields'), api('/v2-settings')]);
+    allFields = (df.fields || []).sort((a,b) => parseInt(a.order||0) - parseInt(b.order||0));
+    const cfg = (ds.settings || settingsCache);
+    setVal('fbTitle', cfg.form_title);
+    setVal('fbIntro', cfg.form_intro);
+    setVal('fbSubmitBtn', cfg.form_submit_btn);
+    setVal('fbThankyou', cfg.form_thankyou);
+    renderFields();
+    renderFormPreview();
+  } catch(e) {
+    document.getElementById('fieldsList').innerHTML = '<div class="empty-state"><p>Failed to load form fields. Refresh to retry.</p></div>';
+  }
 }
 
 function renderFields() {
