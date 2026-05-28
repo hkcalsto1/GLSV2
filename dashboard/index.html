@@ -218,7 +218,7 @@ tr:hover td{background:#fafcff}
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         Confirmed
       </div>
-      <div class="nav-item" onclick="showTab('templates')" id="nav-templates">
+      <div class="nav-item" onclick="showTab('templates')" id="nav-templates" style="display:none">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         Templates
       </div>
@@ -492,6 +492,43 @@ tr:hover td{background:#fafcff}
           </div>
         </div>
         <button class="btn btn-primary" onclick="saveSettings(['brand_name','logo_url','brand_color'])">Save Branding</button>
+      </div>
+
+      <!-- Email Messages -->
+      <div class="section">
+        <h3>Email Messages</h3>
+        <p class="section-desc">Optional custom lines added to your invite and reminder emails. Leave blank for a clean default.</p>
+        <div class="form-group">
+          <label>Invite Message</label>
+          <textarea id="s_invite_message" rows="3" placeholder="e.g. We'd love to connect with you at our booth and explore how we can work together."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Reminder Message</label>
+          <textarea id="s_reminder_message" rows="3" placeholder="e.g. Slots are filling up fast — secure yours today."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings(['invite_message','reminder_message'])">Save Messages</button>
+      </div>
+
+      <!-- Email Preview -->
+      <div class="section">
+        <h3>Email Preview</h3>
+        <p class="section-desc">See exactly what your contacts receive at each step.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          <button class="btn btn-outline btn-sm" onclick="previewEmail('invite')">Invite</button>
+          <button class="btn btn-outline btn-sm" onclick="previewEmail('reminder_manual')">Reminder</button>
+          <button class="btn btn-outline btn-sm" onclick="previewEmail('reminder_auto')">Auto Reminder</button>
+          <button class="btn btn-outline btn-sm" onclick="previewEmail('sp_confirm')">SP Confirm</button>
+          <button class="btn btn-outline btn-sm" onclick="previewEmail('customer_confirm')">Customer Confirm</button>
+          <button class="btn btn-outline btn-sm" onclick="previewEmail('booking_received')">Booking Received</button>
+        </div>
+        <div id="emailPreviewLabel" style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:8px;display:none"></div>
+        <iframe id="emailPreviewFrame" style="width:100%;height:480px;border:1.5px solid #e2e8f0;border-radius:8px;display:none" frameborder="0"></iframe>
+        <div style="margin-top:12px;display:none" id="emailPreviewTestRow">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="email" id="previewTestEmail" placeholder="Send test to..." style="flex:1;max-width:260px">
+            <button class="btn btn-outline btn-sm" onclick="sendPreviewTest()">Send Test</button>
+          </div>
+        </div>
       </div>
 
       <!-- Security -->
@@ -808,6 +845,8 @@ async function loadSettings() {
     setVal('s_resend_api_key', s.resend_api_key);
     setVal('s_brand_name', s.brand_name);
     setVal('s_logo_url', s.logo_url);
+    setVal('s_invite_message', s.invite_message);
+    setVal('s_reminder_message', s.reminder_message);
     if (s.brand_color) {
       document.getElementById('s_brand_color').value = s.brand_color;
       setVal('s_brand_color_hex', s.brand_color);
@@ -874,6 +913,35 @@ async function changePassword() {
 function syncColorHex() {
   const h = document.getElementById('s_brand_color_hex').value;
   if (/^#[0-9a-f]{6}$/i.test(h)) document.getElementById('s_brand_color').value = h;
+}
+
+let _currentPreviewType = '';
+function previewEmail(type) {
+  _currentPreviewType = type;
+  const s = settingsCache || {};
+  const customMsg = type === 'invite' ? (s.invite_message||'') : type === 'reminder_manual' ? (s.reminder_message||'') : '';
+  const sampleData = {name:'Jane Smith',company:'Acme Logistics',client_name:'Jane Smith',client_email:'jane@acme.com',date:'Jun 24, 2026',time:'10:00',salesperson_name:'Tom Lee',salesperson_email:'tom@yourcompany.com',_when:'1 day',bookingLink:s.booking_link||'#',unsubLink:'#'};
+  const html = buildEmailPreview(type, '', customMsg, sampleData);
+  const labels = {invite:'Invite email',reminder_manual:'Manual reminder',reminder_auto:'Auto reminder',sp_confirm:'SP notification',customer_confirm:'Customer confirmation',booking_received:'Booking received'};
+  document.getElementById('emailPreviewLabel').textContent = labels[type] || type;
+  document.getElementById('emailPreviewLabel').style.display = 'block';
+  document.getElementById('emailPreviewFrame').srcdoc = html;
+  document.getElementById('emailPreviewFrame').style.display = 'block';
+  document.getElementById('emailPreviewTestRow').style.display = 'block';
+}
+
+async function sendPreviewTest() {
+  const to = document.getElementById('previewTestEmail').value;
+  if (!to) return toast('Enter a test email address', 'error');
+  const s = settingsCache || {};
+  const customMsg = _currentPreviewType === 'invite' ? (s.invite_message||'') : _currentPreviewType === 'reminder_manual' ? (s.reminder_message||'') : '';
+  const sampleData = {name:'Jane Smith',company:'Acme Logistics',client_name:'Jane Smith',client_email:'jane@acme.com',date:'Jun 24, 2026',time:'10:00',salesperson_name:'Tom Lee',salesperson_email:'tom@yourcompany.com',_when:'1 day',bookingLink:s.booking_link||'',unsubLink:''};
+  const html = buildEmailPreview(_currentPreviewType, '', customMsg, sampleData);
+  const subject = 'Preview: ' + _currentPreviewType;
+  try {
+    await api('/v2-test-email', {method:'POST', body: JSON.stringify({to, subject, html})});
+    toast('Test email sent to ' + to, 'success');
+  } catch(e) { toast('Failed to send test', 'error'); }
 }
 
 // ─── CONTACTS ─────────────────────────────────────────────────────────────────
@@ -1163,23 +1231,24 @@ const TPL_DESCRIPTIONS = {
   booking_received: 'Sent to the customer immediately after they submit the booking form.'
 };
 
-function buildEmailPreview(type, subject, customMsg) {
+function buildEmailPreview(type, subject, customMsg, data) {
   const s = settingsCache || {};
   const bc = s.brand_color || '#0f1c2e';
   const brand = s.from_name || s.brand_name || 'Booking System';
   const logo = s.logo_url ? `<img src="${s.logo_url}" style="max-height:40px;max-width:160px;object-fit:contain">` : `<span style="color:#fff;font-size:18px;font-weight:700">${brand}</span>`;
+  const d = data || {name:'Jane Smith',company:'Acme Co',client_name:'Jane Smith',date:'Jun 24, 2026',time:'10:00',salesperson_name:'Tom Lee',salesperson_email:'tom@co.com',_when:'1 day'};
   const msg = customMsg ? `<p style="color:#374151;font-size:14px;line-height:1.7;margin:0 0 16px">${customMsg.replace(/\n/g,'<br>')}</p>` : '';
   const eventBox = (s.event_name||s.event_dates||s.event_venue) ? `<div style="background:#f8fafc;border-radius:8px;padding:14px 16px;margin:16px 0;border-left:4px solid ${bc}">${s.event_name?`<p style="margin:0 0 6px;font-weight:600;color:#1a202c">${s.event_name}</p>`:''} ${s.event_dates?`<p style="margin:0 0 4px;font-size:13px;color:#374151">📅 ${s.event_dates}</p>`:''} ${s.event_venue?`<p style="margin:0;font-size:13px;color:#374151">📍 ${s.event_venue}</p>`:''}</div>` : '';
   const cta = `<a href="#" style="display:inline-block;background:${bc};color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;margin:8px 0">Book Your Meeting Slot →</a>`;
-  const apptBox = `<div style="background:#f8fafc;border-radius:8px;padding:14px 16px;margin:16px 0"><p style="margin:0 0 6px;font-size:13px;color:#374151">📅 June 24, 2026 · 10:00</p><p style="margin:0 0 6px;font-size:13px;color:#374151">📍 ${s.event_venue||'Venue'}</p><p style="margin:0;font-size:13px;color:#374151">🤝 Your contact: Sales Name</p></div>`;
-  const greeting = `<p style="color:#374151;font-size:14px;line-height:1.7;margin:0 0 12px">Dear <strong>Contact Name</strong>,</p>`;
+  const apptBox = `<div style="background:#f8fafc;border-radius:8px;padding:14px 16px;margin:16px 0"><p style="margin:0 0 6px;font-size:13px;color:#374151">📅 ${d.date} · ${d.time}</p><p style="margin:0 0 6px;font-size:13px;color:#374151">📍 ${s.event_venue||'Venue'}</p><p style="margin:0;font-size:13px;color:#374151">🤝 ${d.salesperson_name||'Sales Name'}</p></div>`;
+  const greeting = `<p style="color:#374151;font-size:14px;line-height:1.7;margin:0 0 12px">Dear <strong>${d.name||d.client_name||'Contact'}</strong>,</p>`;
 
   let content = '';
   if (type === 'invite' || type === 'reminder_manual') content = greeting + msg + eventBox + cta;
-  else if (type === 'reminder_auto') content = greeting + `<p style="font-weight:700;color:${bc};font-size:15px;margin:0 0 12px">Your meeting is in 1 day</p>` + msg + apptBox;
-  else if (type === 'sp_confirm') content = greeting + `<p style="color:#374151;font-size:14px;margin:0 0 12px">You have been assigned a new meeting:</p>` + msg + `<div style="background:#f8fafc;border-radius:8px;padding:14px 16px;margin:16px 0"><p style="margin:0 0 6px;font-size:13px">👤 Contact Name (Company)</p><p style="margin:0 0 6px;font-size:13px">📅 June 24, 2026 · 10:00</p><p style="margin:0;font-size:13px">📍 ${s.event_venue||'Venue'}</p></div>`;
+  else if (type === 'reminder_auto') content = greeting + `<p style="font-weight:700;color:${bc};font-size:15px;margin:0 0 12px">Your meeting is in ${d._when||'1 day'}</p>` + msg + apptBox;
+  else if (type === 'sp_confirm') content = greeting + `<p style="color:#374151;font-size:14px;margin:0 0 12px">You have been assigned a new meeting:</p>` + msg + `<div style="background:#f8fafc;border-radius:8px;padding:14px 16px;margin:16px 0"><p style="margin:0 0 6px;font-size:13px">👤 ${d.client_name||'Client'} (${d.company||''})</p><p style="margin:0 0 6px;font-size:13px">📅 ${d.date} · ${d.time}</p><p style="margin:0;font-size:13px">📍 ${s.event_venue||'Venue'}</p></div>`;
   else if (type === 'customer_confirm') content = greeting + msg + apptBox;
-  else if (type === 'booking_received') content = greeting + msg + `<div style="background:#f8fafc;border-radius:8px;padding:14px 16px;margin:16px 0"><p style="margin:0 0 6px;font-size:13px;color:#374151">📅 June 24, 2026 · 10:00</p></div><p style="color:#64748b;font-size:13px;margin:0">You will receive a confirmation once a contact is assigned.</p>`;
+  else if (type === 'booking_received') content = greeting + msg + `<div style="background:#f8fafc;border-radius:8px;padding:14px 16px;margin:16px 0"><p style="margin:0 0 6px;font-size:13px;color:#374151">📅 ${d.date} · ${d.time}</p></div><p style="color:#64748b;font-size:13px;margin:0">You will receive a confirmation once a contact is assigned.</p>`;
 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:16px;background:#f0f4f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table width="520" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)"><tr><td style="background:${bc};padding:20px 28px">${logo}</td></tr><tr><td style="padding:28px">${content}<p style="color:#374151;font-size:13px;margin:24px 0 0">${brand} Team</p></td></tr><tr><td style="background:#f8fafc;padding:16px 28px;border-top:1px solid #e2e8f0"><p style="color:#94a3b8;font-size:11px;margin:0">${brand}${s.reply_to?' · '+s.reply_to:''} · <a href="#" style="color:#94a3b8">Unsubscribe</a></p></td></tr></table></td></tr></table></body></html>`;
 }
