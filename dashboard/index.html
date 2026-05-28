@@ -6,7 +6,7 @@
 <title>Booking Dashboard</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;color:#1a202c;min-height:100vh}
+body{font-family:'PingFang SC','Microsoft YaHei','Noto Sans SC',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;color:#1a202c;min-height:100vh}
 
 /* LOGIN */
 #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0f1c2e}
@@ -191,9 +191,9 @@ tr:hover td{background:#fafcff}
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-logo" id="loginBrand">Booking System</div>
-    <div class="login-sub">Dashboard Login</div>
-    <input type="password" id="loginPw" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
-    <button onclick="doLogin()">Sign In</button>
+    <div class="login-sub" data-i18n="login_sub">Dashboard Login</div>
+    <input type="password" id="loginPw" data-i18n-placeholder="login_pw" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()" data-i18n="login_btn">Sign In</button>
     <div class="login-err" id="loginErr"></div>
   </div>
 </div>
@@ -208,39 +208,40 @@ tr:hover td{background:#fafcff}
     <nav class="sidebar-nav">
       <div class="nav-item active" onclick="showTab('contacts')" id="nav-contacts">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Contacts
+        <span data-i18n="nav_contacts">Contacts</span>
       </div>
       <div class="nav-item" onclick="showTab('pending')" id="nav-pending">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Pending
+        <span data-i18n="nav_pending">Pending</span>
       </div>
       <div class="nav-item" onclick="showTab('confirmed')" id="nav-confirmed">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-        Confirmed
+        <span data-i18n="nav_confirmed">Confirmed</span>
       </div>
       <div class="nav-item" onclick="showTab('templates')" id="nav-templates" style="display:none">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        Templates
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/></svg>
+        <span data-i18n="nav_templates">Templates</span>
       </div>
       <div class="nav-item" onclick="showTab('slots')" id="nav-slots">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        Slots
+        <span data-i18n="nav_slots">Slots</span>
       </div>
       <div class="nav-item" onclick="showTab('team')" id="nav-team">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        Team
+        <span data-i18n="nav_team">Team</span>
       </div>
       <div class="nav-item" onclick="showTab('formbuilder')" id="nav-formbuilder">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        Form Builder
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span data-i18n="nav_formbuilder">Form Builder</span>
       </div>
       <div class="nav-item" onclick="showTab('settings')" id="nav-settings">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        Settings
+        <span data-i18n="nav_settings">Settings</span>
       </div>
     </nav>
     <div class="sidebar-footer">
-      <span id="sidebarUrl"></span>
+      <button onclick="toggleLang()" id="langToggle" style="background:none;border:1.5px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;margin-bottom:8px">中文</button>
+      <span id="sidebarUrl" style="font-size:11px;color:rgba(255,255,255,0.4)"></span>
     </div>
   </div>
 
@@ -249,18 +250,18 @@ tr:hover td{background:#fafcff}
     <!-- CONTACTS TAB -->
     <div class="tab-pane active" id="tab-contacts">
       <div class="page-header">
-        <h1>Contacts</h1>
-        <p>Manage your invitee list and track engagement</p>
+        <h1 data-i18n="contacts_h1">Contacts</h1>
+        <p data-i18n="contacts_sub">Manage your invitee list and track engagement</p>
       </div>
       <div class="stats-row" id="contactStats"></div>
       <div class="card">
         <div class="card-header">
-          <h3>All Contacts</h3>
+          <h3 data-i18n="all_contacts">All Contacts</h3>
           <div class="card-actions">
             <input type="text" class="search-input" placeholder="Search..." oninput="filterContacts(this.value)">
             <button class="btn btn-outline btn-sm" onclick="openModal('importModal')">Import</button>
-            <button class="btn btn-primary btn-sm" onclick="openModal('addContactModal')">+ Add Contact</button>
-            <button class="btn btn-blue btn-sm" onclick="inviteAll()">Invite All Unsent</button>
+            <button class="btn btn-primary btn-sm" onclick="openModal('addContactModal')" data-i18n="add_contact">+ Add Contact</button>
+            <button class="btn btn-blue btn-sm" onclick="inviteAll()" data-i18n="invite_all">Invite All Unsent</button>
           </div>
         </div>
         <div class="table-wrap">
@@ -275,7 +276,7 @@ tr:hover td{background:#fafcff}
     <!-- PENDING TAB -->
     <div class="tab-pane" id="tab-pending">
       <div class="page-header">
-        <h1>Pending Bookings</h1>
+        <h1 data-i18n="pending_h1">Pending Bookings</h1>
         <p>Review and assign salespersons to new booking requests</p>
       </div>
       <div id="pendingList" class="loading-state"><div class="spinner"></div></div>
@@ -284,7 +285,7 @@ tr:hover td{background:#fafcff}
     <!-- CONFIRMED TAB -->
     <div class="tab-pane" id="tab-confirmed">
       <div class="page-header">
-        <h1>Confirmed Bookings</h1>
+        <h1 data-i18n="confirmed_h1">Confirmed Bookings</h1>
         <p>All confirmed appointments</p>
       </div>
       <div class="card">
@@ -301,7 +302,7 @@ tr:hover td{background:#fafcff}
     <!-- TEMPLATES TAB -->
     <div class="tab-pane" id="tab-templates">
       <div class="page-header">
-        <h1>Email Templates</h1>
+        <h1 data-i18n="templates_h1">Email Templates</h1>
         <p>Customise what your contacts receive at every step</p>
       </div>
       <div id="templatesList" class="loading-state"><div class="spinner"></div></div>
@@ -310,12 +311,12 @@ tr:hover td{background:#fafcff}
     <!-- SLOTS TAB -->
     <div class="tab-pane" id="tab-slots">
       <div class="page-header">
-        <h1>Time Slots</h1>
+        <h1 data-i18n="slots_h1">Time Slots</h1>
         <p>Manage available appointment times</p>
       </div>
       <div style="display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start">
         <div class="section">
-          <h3>Add New Slot</h3>
+          <h3 data-i18n="add_slot">Add New Slot</h3>
           <p class="section-desc">Create an available time slot</p>
           <div class="form-group">
             <label>Date</label>
@@ -343,12 +344,12 @@ tr:hover td{background:#fafcff}
     <!-- TEAM TAB -->
     <div class="tab-pane" id="tab-team">
       <div class="page-header">
-        <h1>Team</h1>
+        <h1 data-i18n="team_h1">Team</h1>
         <p>Manage your salespeople who get assigned to bookings</p>
       </div>
       <div style="display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start">
         <div class="section">
-          <h3>Add Team Member</h3>
+          <h3 data-i18n="add_team">Add Team Member</h3>
           <p class="section-desc">Add a salesperson to your roster</p>
           <div class="form-group">
             <label>Full Name</label>
@@ -375,36 +376,36 @@ tr:hover td{background:#fafcff}
     <!-- FORM BUILDER TAB -->
     <div class="tab-pane" id="tab-formbuilder">
       <div class="page-header">
-        <h1>Form Builder</h1>
+        <h1 data-i18n="formbuilder_h1">Form Builder</h1>
         <p>Configure what your booking form looks like — no code needed</p>
       </div>
       <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start">
         <div>
           <div class="section">
-            <h3>Form Header</h3>
+            <h3 data-i18n="form_header">Form Header</h3>
             <p class="section-desc">Text shown at the top of your booking form</p>
             <div class="form-group">
-              <label>Form Title</label>
+              <label data-i18n="lbl_form_title">Form Title</label>
               <input type="text" id="fbTitle" placeholder="Book Your Appointment">
             </div>
             <div class="form-group">
-              <label>Intro Text</label>
+              <label data-i18n="lbl_intro_text">Intro Text</label>
               <textarea id="fbIntro" rows="2" placeholder="Fill in the form below to book your slot."></textarea>
             </div>
             <div class="form-group">
-              <label>Submit Button Text</label>
+              <label data-i18n="lbl_submit_btn">Submit Button Text</label>
               <input type="text" id="fbSubmitBtn" placeholder="Submit Booking">
             </div>
             <div class="form-group">
-              <label>Thank-You Message (shown after submit)</label>
+              <label data-i18n="lbl_thankyou">Thank-You Message (shown after submit)</label>
               <textarea id="fbThankyou" rows="2" placeholder="Thank you! We will confirm your booking shortly."></textarea>
             </div>
-            <button class="btn btn-primary" onclick="saveFormHeader()">Save Header</button>
+            <button class="btn btn-primary" onclick="saveFormHeader()" data-i18n="save_header">Save Header</button>
           </div>
           <div class="section">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-              <div><h3>Form Fields</h3><p class="section-desc" style="margin:0">Fields appear on your booking form in this order</p></div>
-              <button class="btn btn-primary btn-sm" onclick="openModal('addFieldModal')">+ Add Field</button>
+              <div><h3 data-i18n="form_fields">Form Fields</h3><p class="section-desc" style="margin:0">Fields appear on your booking form in this order</p></div>
+              <button class="btn btn-primary btn-sm" onclick="openModal('addFieldModal')" data-i18n="add_field">+ Add Field</button>
             </div>
             <div id="fieldsList"><div class="loading-state"><div class="spinner"></div></div></div>
           </div>
@@ -414,7 +415,7 @@ tr:hover td{background:#fafcff}
           <p class="section-desc">How your form looks to visitors</p>
           <div id="formPreview" style="border:1.5px solid #e2e8f0;border-radius:8px;padding:16px;background:#f8fafc;min-height:200px;font-size:13px"></div>
           <div style="margin-top:12px">
-            <a id="formLinkBtn" href="#" target="_blank" class="btn btn-outline btn-sm" style="width:100%;justify-content:center">Open Live Form ↗</a>
+            <a id="formLinkBtn" href="#" target="_blank" class="btn btn-outline btn-sm" style="width:100%;justify-content:center" data-i18n="open_form">Open Live Form ↗</a>
           </div>
         </div>
       </div>
@@ -423,25 +424,25 @@ tr:hover td{background:#fafcff}
     <!-- SETTINGS TAB -->
     <div class="tab-pane" id="tab-settings">
       <div class="page-header">
-        <h1>Settings</h1>
+        <h1 data-i18n="settings_h1">Settings</h1>
         <p>Configure your event, email, and branding</p>
       </div>
 
       <!-- Event -->
       <div class="section">
-        <h3>Event Details</h3>
+        <h3 data-i18n="event_details">Event Details</h3>
         <p class="section-desc">Used in email templates and the booking form</p>
         <div class="form-row">
-          <div class="form-group"><label>Event Name</label><input type="text" id="s_event_name" placeholder="Air Cargo China 2026"></div>
-          <div class="form-group"><label>Event Dates</label><input type="text" id="s_event_dates" placeholder="June 24–26, 2026"></div>
+          <div class="form-group"><label data-i18n="lbl_event_name">Event Name</label><input type="text" id="s_event_name" placeholder="Air Cargo China 2026"></div>
+          <div class="form-group"><label data-i18n="lbl_event_dates">Event Dates</label><input type="text" id="s_event_dates" placeholder="June 24–26, 2026"></div>
         </div>
-        <div class="form-group"><label>Venue</label><input type="text" id="s_event_venue" placeholder="Shanghai New International Expo Centre"></div>
-        <button class="btn btn-primary" onclick="saveSettings(['event_name','event_dates','event_venue'])">Save Event Details</button>
+        <div class="form-group"><label data-i18n="lbl_venue">Venue</label><input type="text" id="s_event_venue" placeholder="Shanghai New International Expo Centre"></div>
+        <button class="btn btn-primary" onclick="saveSettings(['event_name','event_dates','event_venue'])" data-i18n="save_event">Save Event Details</button>
       </div>
 
       <!-- Email -->
       <div class="section">
-        <h3>Email Sending</h3>
+        <h3 data-i18n="email_sending">Email Sending</h3>
         <p class="section-desc">Choose how your emails are sent</p>
         <div class="email-mode-card selected" id="modeManaged" onclick="selectEmailMode('managed')">
           <div class="mode-radio" id="radioManaged"></div>
@@ -470,48 +471,48 @@ tr:hover td{background:#fafcff}
           </div>
         </div>
         <div class="form-row" style="margin-top:16px">
-          <div class="form-group"><label>From Name</label><input type="text" id="s_from_name" placeholder="Your Company"></div>
-          <div class="form-group"><label>Reply-To Email</label><input type="email" id="s_reply_to" placeholder="hello@yourcompany.com"></div>
+          <div class="form-group"><label data-i18n="lbl_from_name">From Name</label><input type="text" id="s_from_name" placeholder="Your Company"></div>
+          <div class="form-group"><label data-i18n="lbl_reply_to">Reply-To Email</label><input type="email" id="s_reply_to" placeholder="hello@yourcompany.com"></div>
         </div>
-        <button class="btn btn-primary" onclick="saveEmailSettings()">Save Email Settings</button>
+        <button class="btn btn-primary" onclick="saveEmailSettings()" data-i18n="save_email">Save Email Settings</button>
       </div>
 
       <!-- Branding -->
       <div class="section">
-        <h3>Branding</h3>
+        <h3 data-i18n="branding">Branding</h3>
         <p class="section-desc">Applied to your booking form and dashboard header</p>
         <div class="form-row">
-          <div class="form-group"><label>Company / Brand Name</label><input type="text" id="s_brand_name" placeholder="Your Company"></div>
-          <div class="form-group"><label>Logo URL</label><input type="text" id="s_logo_url" placeholder="https://yoursite.com/logo.png"><div class="hint">Link to your logo image (PNG/SVG)</div></div>
+          <div class="form-group"><label data-i18n="lbl_brand_name">Company / Brand Name</label><input type="text" id="s_brand_name" placeholder="Your Company"></div>
+          <div class="form-group"><label data-i18n="lbl_logo_url">Logo URL</label><input type="text" id="s_logo_url" placeholder="https://yoursite.com/logo.png"><div class="hint">Link to your logo image (PNG/SVG)</div></div>
         </div>
         <div class="form-group">
-          <label>Brand Colour</label>
+          <label data-i18n="lbl_brand_color">Brand Colour</label>
           <div style="display:flex;gap:10px;align-items:center">
             <input type="color" id="s_brand_color" value="#0f1c2e" style="width:48px;height:36px;padding:2px;border:1.5px solid #e2e8f0;border-radius:6px;cursor:pointer">
             <input type="text" id="s_brand_color_hex" placeholder="#0f1c2e" style="width:120px" oninput="syncColorHex()">
           </div>
         </div>
-        <button class="btn btn-primary" onclick="saveSettings(['brand_name','logo_url','brand_color'])">Save Branding</button>
+        <button class="btn btn-primary" onclick="saveSettings(['brand_name','logo_url','brand_color'])" data-i18n="save_branding">Save Branding</button>
       </div>
 
       <!-- Email Messages -->
       <div class="section">
-        <h3>Email Messages</h3>
+        <h3 data-i18n="email_messages">Email Messages</h3>
         <p class="section-desc">Optional custom lines added to your invite and reminder emails. Leave blank for a clean default.</p>
         <div class="form-group">
-          <label>Invite Message</label>
+          <label data-i18n="lbl_invite_msg">Invite Message</label>
           <textarea id="s_invite_message" rows="3" placeholder="e.g. We'd love to connect with you at our booth and explore how we can work together."></textarea>
         </div>
         <div class="form-group">
-          <label>Reminder Message</label>
+          <label data-i18n="lbl_reminder_msg">Reminder Message</label>
           <textarea id="s_reminder_message" rows="3" placeholder="e.g. Slots are filling up fast — secure yours today."></textarea>
         </div>
-        <button class="btn btn-primary" onclick="saveSettings(['invite_message','reminder_message'])">Save Messages</button>
+        <button class="btn btn-primary" onclick="saveSettings(['invite_message','reminder_message'])" data-i18n="save_messages">Save Messages</button>
       </div>
 
       <!-- Email Preview -->
       <div class="section">
-        <h3>Email Preview</h3>
+        <h3 data-i18n="email_preview">Email Preview</h3>
         <p class="section-desc">See exactly what your contacts receive at each step.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
           <button class="btn btn-outline btn-sm" onclick="previewEmail('invite')">Invite</button>
@@ -533,22 +534,22 @@ tr:hover td{background:#fafcff}
 
       <!-- Security -->
       <div class="section">
-        <h3>Dashboard Password</h3>
+        <h3 data-i18n="dashboard_pw">Dashboard Password</h3>
         <p class="section-desc">Change your dashboard login password</p>
         <div class="form-row">
           <div class="form-group">
-            <label>New Password</label>
+            <label data-i18n="lbl_new_pw">New Password</label>
             <div class="pw-wrap">
               <input type="password" id="s_new_pw" placeholder="New password">
               <button class="pw-toggle" onclick="togglePw('s_new_pw',this)">Show</button>
             </div>
           </div>
           <div class="form-group">
-            <label>Confirm Password</label>
+            <label data-i18n="lbl_confirm_pw">Confirm Password</label>
             <input type="password" id="s_confirm_pw" placeholder="Repeat new password">
           </div>
         </div>
-        <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+        <button class="btn btn-primary" onclick="changePassword()" data-i18n="update_pw">Update Password</button>
       </div>
 
     </div>
@@ -943,7 +944,7 @@ async function sendPreviewTest() {
   const html = buildEmailPreview(_currentPreviewType, '', customMsg, sampleData);
   const subject = 'Preview: ' + _currentPreviewType;
   try {
-    await api('/v2-test-email', {method:'POST', body: JSON.stringify({to, subject, html})});
+    await api('/v2-send-test-email', {method:'POST', body: JSON.stringify({to, subject, html})});
     toast('Test email sent to ' + to, 'success');
   } catch(e) { toast('Failed to send test', 'error'); }
 }
@@ -1321,7 +1322,7 @@ async function sendTestEmail() {
   const subject = document.getElementById('tplSubject').value;
   const customMsg = document.getElementById('tplCustomMsg').value;
   const html = buildEmailPreview(name, subject, customMsg);
-  await api('/v2-test-email', {method:'POST', body: JSON.stringify({to, subject, html})});
+  await api('/v2-send-test-email', {method:'POST', body: JSON.stringify({to, subject, html})});
   toast('Test email sent to ' + to, 'success');
 }
 
@@ -1632,7 +1633,82 @@ function togglePw(inputId, btn) {
   else { inp.type = 'password'; btn.textContent = 'Show'; }
 }
 
+// ─── BILINGUAL / I18N ────────────────────────────────────────────────────────
+const LANG = {
+  en: {
+    login_sub:'Dashboard Login', login_pw:'Enter password', login_btn:'Sign In',
+    nav_contacts:'Contacts', nav_pending:'Pending', nav_confirmed:'Confirmed',
+    nav_slots:'Slots', nav_team:'Team', nav_formbuilder:'Form Builder', nav_settings:'Settings', nav_templates:'Templates',
+    contacts_h1:'Contacts', contacts_sub:'Manage your invitee list and track engagement',
+    all_contacts:'All Contacts',
+    pending_h1:'Pending Bookings', confirmed_h1:'Confirmed Bookings',
+    templates_h1:'Email Templates', slots_h1:'Time Slots', team_h1:'Team',
+    formbuilder_h1:'Form Builder', settings_h1:'Settings',
+    add_slot:'Add New Slot', add_team:'Add Team Member',
+    form_header:'Form Header', form_fields:'Form Fields',
+    event_details:'Event Details', email_sending:'Email Sending', branding:'Branding',
+    email_messages:'Email Messages', email_preview:'Email Preview', dashboard_pw:'Dashboard Password',
+    add_contact:'+ Add Contact', invite_all:'Invite All Unsent',
+    save_event:'Save Event Details', save_email:'Save Email Settings', save_branding:'Save Branding',
+    save_messages:'Save Messages', update_pw:'Update Password', save_header:'Save Header',
+    add_field:'+ Add Field', open_form:'Open Live Form ↗',
+    lbl_event_name:'Event Name', lbl_event_dates:'Event Dates', lbl_venue:'Venue',
+    lbl_from_name:'From Name', lbl_reply_to:'Reply-To Email',
+    lbl_brand_name:'Company / Brand Name', lbl_logo_url:'Logo URL', lbl_brand_color:'Brand Colour',
+    lbl_invite_msg:'Invite Message', lbl_reminder_msg:'Reminder Message',
+    lbl_new_pw:'New Password', lbl_confirm_pw:'Confirm Password',
+    lbl_form_title:'Form Title', lbl_intro_text:'Intro Text',
+    lbl_submit_btn:'Submit Button Text', lbl_thankyou:'Thank-You Message (shown after submit)',
+  },
+  zh: {
+    login_sub:'管理后台登录', login_pw:'请输入密码', login_btn:'登录',
+    nav_contacts:'联系人', nav_pending:'待处理', nav_confirmed:'已确认',
+    nav_slots:'时间段', nav_team:'团队', nav_formbuilder:'表单设置', nav_settings:'系统设置', nav_templates:'邮件模板',
+    contacts_h1:'联系人', contacts_sub:'管理受邀联系人并跟踪互动状态',
+    all_contacts:'全部联系人',
+    pending_h1:'待处理预约', confirmed_h1:'已确认预约',
+    templates_h1:'邮件模板', slots_h1:'时间段', team_h1:'团队',
+    formbuilder_h1:'表单设置', settings_h1:'系统设置',
+    add_slot:'添加时间段', add_team:'添加团队成员',
+    form_header:'表单标题', form_fields:'表单字段',
+    event_details:'活动详情', email_sending:'邮件发送设置', branding:'品牌设置',
+    email_messages:'邮件内容', email_preview:'邮件预览', dashboard_pw:'管理密码',
+    add_contact:'+ 添加联系人', invite_all:'批量发送邀请',
+    save_event:'保存活动详情', save_email:'保存邮件设置', save_branding:'保存品牌设置',
+    save_messages:'保存邮件内容', update_pw:'更新密码', save_header:'保存标题',
+    add_field:'+ 添加字段', open_form:'打开预约表单 ↗',
+    lbl_event_name:'活动名称', lbl_event_dates:'活动日期', lbl_venue:'地点',
+    lbl_from_name:'发件人名称', lbl_reply_to:'回复邮箱',
+    lbl_brand_name:'公司 / 品牌名称', lbl_logo_url:'Logo 链接', lbl_brand_color:'品牌颜色',
+    lbl_invite_msg:'邀请邮件内容', lbl_reminder_msg:'提醒邮件内容',
+    lbl_new_pw:'新密码', lbl_confirm_pw:'确认密码',
+    lbl_form_title:'表单标题', lbl_intro_text:'简介文字',
+    lbl_submit_btn:'提交按钮文字', lbl_thankyou:'感谢语（提交后显示）',
+  }
+};
+
+let currentLang = localStorage.getItem('v2_lang') || 'en';
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('v2_lang', lang);
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  document.getElementById('langToggle').textContent = lang === 'zh' ? 'EN' : '中文';
+  const map = LANG[lang] || LANG.en;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (map[key]) el.textContent = map[key];
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (map[key]) el.placeholder = map[key];
+  });
+}
+
+function toggleLang() { setLang(currentLang === 'en' ? 'zh' : 'en'); }
+
 // ─── AUTO-CHECK AUTH ON LOAD ──────────────────────────────────────────────────
+setLang(currentLang);
 (async function() {
   const saved = sessionStorage.getItem('v2_auth');
   if (saved) {

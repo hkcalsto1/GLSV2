@@ -6,7 +6,7 @@
 <title>Book Your Appointment</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+body{font-family:'PingFang SC','Microsoft YaHei','Noto Sans SC',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.1);width:100%;max-width:520px;overflow:hidden}
 .card-header{padding:28px 32px 20px;border-bottom:1px solid #f1f5f9}
 .logo-wrap{margin-bottom:14px}
@@ -23,7 +23,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--brand-color,#0f1c2e)}
 .form-group textarea{resize:vertical;min-height:80px}
 .radio-group,.checkbox-group{display:flex;flex-direction:column;gap:8px}
-.radio-group label,.checkbox-group label{display:flex;align-items:center;gap:10px;font-size:14px;color:#374151;cursor:pointer;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;transition:all 0.15s}
+.radio-group label,.checkbox-group label{display:flex;align-items:center;gap:10px;font-size:14px;color:#374151;cursor:pointer;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;transition:all 0.15s;width:100%;box-sizing:border-box}
 .radio-group label:has(input:checked),.checkbox-group label:has(input:checked){border-color:var(--brand-color,#0f1c2e);background:#f0f9ff}
 .radio-group input,.checkbox-group input{flex-shrink:0}
 .slot-option{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer;transition:all 0.15s;margin-bottom:8px}
@@ -177,7 +177,7 @@ function renderFormFields(fields) {
     } else if (f.type === 'select') {
       input = `<select name="${esc(name)}" ${reqAttr}><option value="">Select...</option>${opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>`;
     } else if (f.type === 'radio') {
-      input = `<div class="radio-group">${opts.map(o=>`<label><input type="radio" name="${esc(name)}" value="${esc(o)}" ${reqAttr}> ${esc(o)}</label>`).join('')}</div>`;
+      input = `<div class="radio-group">${opts.map(o=>`<label><input type="radio" name="${esc(name)}" value="${esc(o)}" ${reqAttr}><span>${esc(o)}</span></label>`).join('')}</div>`;
     } else if (f.type === 'checkbox') {
       input = `<div class="checkbox-group">${opts.map(o=>`<label><input type="checkbox" name="${esc(name)}_${esc(o)}" value="${esc(o)}"> ${esc(o)}</label>`).join('')}</div>`;
     } else {
