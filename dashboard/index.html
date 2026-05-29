@@ -241,6 +241,7 @@ tr:hover td{background:#fafcff}
     </nav>
     <div class="sidebar-footer">
       <button onclick="toggleLang()" id="langToggle" style="background:none;border:1.5px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;margin-bottom:8px">中文</button>
+      <button onclick="doLogout()" style="background:none;border:1.5px solid rgba(255,100,100,0.35);color:rgba(255,150,150,0.8);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;width:100%;margin-bottom:8px;transition:all 0.15s" onmouseover="this.style.background='rgba(255,100,100,0.15)'" onmouseout="this.style.background='none'" data-i18n="sign_out">Sign Out</button>
       <span id="sidebarUrl" style="font-size:11px;color:rgba(255,255,255,0.4)"></span>
     </div>
   </div>
@@ -792,6 +793,14 @@ async function doLogin() {
   } catch(e) {
     document.getElementById('loginErr').textContent = 'Could not connect. Check your connection.';
   }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('v2_auth');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginPw').value = '';
+  document.getElementById('loginErr').textContent = '';
 }
 
 async function initApp() {
@@ -1636,7 +1645,7 @@ function togglePw(inputId, btn) {
 // ─── BILINGUAL / I18N ────────────────────────────────────────────────────────
 const LANG = {
   en: {
-    login_sub:'Dashboard Login', login_pw:'Enter password', login_btn:'Sign In',
+    login_sub:'Dashboard Login', login_pw:'Enter password', login_btn:'Sign In', sign_out:'Sign Out',
     nav_contacts:'Contacts', nav_pending:'Pending', nav_confirmed:'Confirmed',
     nav_slots:'Slots', nav_team:'Team', nav_formbuilder:'Form Builder', nav_settings:'Settings', nav_templates:'Templates',
     contacts_h1:'Contacts', contacts_sub:'Manage your invitee list and track engagement',
@@ -1661,7 +1670,7 @@ const LANG = {
     lbl_submit_btn:'Submit Button Text', lbl_thankyou:'Thank-You Message (shown after submit)',
   },
   zh: {
-    login_sub:'管理后台登录', login_pw:'请输入密码', login_btn:'登录',
+    login_sub:'管理后台登录', login_pw:'请输入密码', login_btn:'登录', sign_out:'退出登录',
     nav_contacts:'联系人', nav_pending:'待处理', nav_confirmed:'已确认',
     nav_slots:'时间段', nav_team:'团队', nav_formbuilder:'表单设置', nav_settings:'系统设置', nav_templates:'邮件模板',
     contacts_h1:'联系人', contacts_sub:'管理受邀联系人并跟踪互动状态',
