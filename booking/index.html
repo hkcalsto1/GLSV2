@@ -52,6 +52,18 @@ body{font-family:'PingFang SC','Microsoft YaHei','Noto Sans SC',-apple-system,Bl
 
 .err-msg{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 14px;font-size:13px;color:#ef4444;margin-bottom:16px;display:none}
 .no-slots{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;font-size:13px;color:#92400e;margin-bottom:16px}
+
+/* Date + time picker */
+.date-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.date-tab{background:#fff;border:2px solid #e2e8f0;border-radius:10px;padding:10px 16px;cursor:pointer;text-align:center;transition:all 0.15s;font-family:inherit;min-width:80px}
+.date-tab:hover{border-color:var(--brand-color,#0f1c2e)}
+.date-tab.active{background:var(--brand-color,#0f1c2e);color:#fff;border-color:var(--brand-color,#0f1c2e)}
+.date-tab-day{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;opacity:0.65}
+.date-tab.active .date-tab-day{opacity:0.85}
+.date-tab-date{font-size:16px;font-weight:800;margin:3px 0 2px}
+.date-tab-avail{font-size:11px;opacity:0.55}
+.date-tab.active .date-tab-avail{opacity:0.75}
+.time-slots-label{font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -75,7 +87,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Noto Sans SC',-apple-system,Bl
 
         <!-- Slot picker — always shown -->
         <div class="form-group" id="slotGroup">
-          <label>Preferred Time Slot <span class="required">*</span></label>
+          <label>Select Date &amp; Time <span class="required">*</span></label>
           <div id="slotPicker"><div style="color:#94a3b8;font-size:13px">Loading available slots...</div></div>
         </div>
 
@@ -100,6 +112,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Noto Sans SC',-apple-system,Bl
 const N8N = 'https://n8n.okahh.com/webhook';
 let config = {};
 let slots = [];
+let selectedSlotDate = null;
 
 const STD_FIELDS = [
   { id: 'name',    labelEn: 'Full Name',                  labelZh: '姓名',             type: 'text',     lockRequired: true,  autocomplete: 'name' },
@@ -250,21 +263,65 @@ function renderSlots() {
     document.getElementById('submitBtn').disabled = true;
     return;
   }
-  el.innerHTML = slots.map(s => {
+
+  // Group slots by date
+  const byDate = {};
+  slots.forEach(s => {
+    const d = s.date || '';
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(s);
+  });
+  const dates = Object.keys(byDate).sort();
+
+  // Default to first date if none selected or selected date no longer has slots
+  if (!selectedSlotDate || !byDate[selectedSlotDate]) selectedSlotDate = dates[0];
+
+  // Date tab buttons
+  const dateTabs = dates.map(d => {
+    const count = byDate[d].length;
+    const isActive = d === selectedSlotDate;
+    const dt = new Date(d + 'T00:00:00');
+    const dayName = dt.toLocaleDateString('en-GB', {weekday:'short'});
+    const dayDate = dt.toLocaleDateString('en-GB', {day:'numeric', month:'short'});
+    return `<button type="button" class="date-tab${isActive ? ' active' : ''}" onclick="selectSlotDate('${esc(d)}')">
+      <div class="date-tab-day">${dayName}</div>
+      <div class="date-tab-date">${dayDate}</div>
+      <div class="date-tab-avail">${count} slot${count !== 1 ? 's' : ''}</div>
+    </button>`;
+  }).join('');
+
+  // Time slots for selected date
+  const times = (byDate[selectedSlotDate] || []).map(s => {
     const remaining = parseInt(s.capacity||1) - parseInt(s.booked_count||0);
     const urgency = remaining <= 1
       ? `<span style="color:#ef4444;font-weight:700">⚡ Last spot!</span>`
       : remaining <= 3
       ? `<span style="color:#f59e0b;font-weight:600">Only ${remaining} left</span>`
-      : `<span style="color:#10b981">${remaining} spots available</span>`;
+      : `<span style="color:#10b981">${remaining} spot${remaining!==1?'s':''} available</span>`;
     return `<label class="slot-option">
       <input type="radio" name="slot_id" value="${esc(s.slot_Id)}" data-date="${esc(s.date)}" data-time="${esc(s.time||'')}" required>
       <div>
-        <div class="slot-label">${fmtDate(s.date)} · ${s.time||''}</div>
+        <div class="slot-label">${s.time || ''}</div>
         <div class="slot-sub">${urgency}</div>
       </div>
     </label>`;
   }).join('');
+
+  const selDate = new Date(selectedSlotDate + 'T00:00:00');
+  const selLabel = selDate.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
+
+  el.innerHTML = `
+    <div class="date-tabs">${dateTabs}</div>
+    <div class="time-slots-label">Available times — ${selLabel}</div>
+    ${times}`;
+}
+
+function selectSlotDate(date) {
+  selectedSlotDate = date;
+  // Clear any previously selected time when switching dates
+  const checked = document.querySelector('input[name="slot_id"]:checked');
+  if (checked) checked.checked = false;
+  renderSlots();
 }
 
 async function submitForm(e) {
