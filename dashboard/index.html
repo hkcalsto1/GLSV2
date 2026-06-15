@@ -702,6 +702,11 @@ tr:hover td{background:#fafcff}
           <textarea id="tplCustomMsg" rows="6" placeholder="Write a short message to your contact..." oninput="updateTplPreview()" style="width:100%;resize:vertical"></textarea>
         </div>
         <div class="form-group">
+          <label>Banner Image URL <span style="color:#94a3b8;font-weight:400">(optional)</span></label>
+          <input type="url" id="tplImageUrl" placeholder="https://yoursite.com/banner.jpg" oninput="updateTplPreview()">
+          <div class="hint">Shown full-width below the email header. Recommended: 600px wide, JPG/PNG.</div>
+        </div>
+        <div class="form-group">
           <label>Send Test Email</label>
           <div style="display:flex;gap:8px">
             <input type="email" id="tplTestEmail" placeholder="your@email.com" style="flex:1">
@@ -978,8 +983,9 @@ function previewEmail(type) {
   const inviteMsg = document.getElementById('s_invite_message')?.value ?? s.invite_message ?? '';
   const reminderMsg = document.getElementById('s_reminder_message')?.value ?? s.reminder_message ?? '';
   const customMsg = type === 'invite' ? inviteMsg : type === 'reminder_manual' ? reminderMsg : '';
+  const tplCache = (window._tplCache || []).find(t => t.template_name === type) || {};
   const sampleData = {name:'Jane Smith',company:'Acme Logistics',client_name:'Jane Smith',client_email:'jane@acme.com',date:'Jun 24, 2026',time:'10:00',salesperson_name:'Tom Lee',salesperson_email:'tom@yourcompany.com',_when:'1 day',bookingLink:s.booking_link||'#',unsubLink:'#'};
-  const html = buildEmailPreview(type, '', customMsg, sampleData);
+  const html = buildEmailPreview(type, '', customMsg, sampleData, tplCache.image_url||'');
   const labels = {invite:'Invite email',reminder_manual:'Manual reminder',reminder_auto:'Auto reminder',sp_confirm:'SP notification',customer_confirm:'Customer confirmation',booking_received:'Booking received'};
   document.getElementById('emailPreviewLabel').textContent = labels[type] || type;
   document.getElementById('emailPreviewLabel').style.display = 'block';
@@ -1289,12 +1295,13 @@ const TPL_DESCRIPTIONS = {
   booking_received: 'Sent to the customer immediately after they submit the booking form.'
 };
 
-function buildEmailPreview(type, subject, customMsg, data) {
+function buildEmailPreview(type, subject, customMsg, data, imageUrl) {
   const s = settingsCache || {};
   const bc = s.brand_color || '#0f1c2e';
   const brand = s.from_name || s.brand_name || 'Booking System';
   const logo = s.logo_url ? `<img src="${s.logo_url}" style="max-height:40px;max-width:160px;object-fit:contain">` : `<span style="color:#fff;font-size:18px;font-weight:700">${brand}</span>`;
   const d = data || {name:'Jane Smith',company:'Acme Co',client_name:'Jane Smith',date:'Jun 24, 2026',time:'10:00',salesperson_name:'Tom Lee',salesperson_email:'tom@co.com',_when:'1 day'};
+  const bannerImg = imageUrl ? `<tr><td style="padding:0"><img src="${imageUrl}" alt="" style="width:100%;max-width:520px;display:block;border:0"></td></tr>` : '';
   const msg = customMsg ? `<p style="color:#374151;font-size:14px;line-height:1.7;margin:0 0 16px">${customMsg.replace(/\n/g,'<br>')}</p>` : '';
   const eventBox = (s.event_name||s.event_dates||s.event_venue) ? `<div style="background:#f8fafc;border-radius:8px;padding:14px 16px;margin:16px 0;border-left:4px solid ${bc}">${s.event_name?`<p style="margin:0 0 6px;font-weight:600;color:#1a202c">${s.event_name}</p>`:''} ${s.event_dates?`<p style="margin:0 0 4px;font-size:13px;color:#374151">📅 ${s.event_dates}</p>`:''} ${s.event_venue?`<p style="margin:0;font-size:13px;color:#374151">📍 ${s.event_venue}</p>`:''}</div>` : '';
   const cta = `<a href="#" style="display:inline-block;background:${bc};color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;margin:8px 0">Book Your Meeting Slot →</a>`;
@@ -1308,7 +1315,7 @@ function buildEmailPreview(type, subject, customMsg, data) {
   else if (type === 'customer_confirm') content = greeting + msg + apptBox;
   else if (type === 'booking_received') content = greeting + msg + `<div style="background:#f8fafc;border-radius:8px;padding:14px 16px;margin:16px 0"><p style="margin:0 0 6px;font-size:13px;color:#374151">📅 ${d.date} · ${d.time}</p></div><p style="color:#64748b;font-size:13px;margin:0">You will receive a confirmation once a contact is assigned.</p>`;
 
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:16px;background:#f0f4f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table width="520" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)"><tr><td style="background:${bc};padding:20px 28px">${logo}</td></tr><tr><td style="padding:28px">${content}<p style="color:#374151;font-size:13px;margin:24px 0 0">${brand} Team</p></td></tr><tr><td style="background:#f8fafc;padding:16px 28px;border-top:1px solid #e2e8f0"><p style="color:#94a3b8;font-size:11px;margin:0">${brand}${s.reply_to?' · '+s.reply_to:''} · <a href="#" style="color:#94a3b8">Unsubscribe</a></p></td></tr></table></td></tr></table></body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:16px;background:#f0f4f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table width="520" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)"><tr><td style="background:${bc};padding:20px 28px">${logo}</td></tr>${bannerImg}<tr><td style="padding:28px">${content}<p style="color:#374151;font-size:13px;margin:24px 0 0">${brand} Team</p></td></tr><tr><td style="background:#f8fafc;padding:16px 28px;border-top:1px solid #e2e8f0"><p style="color:#94a3b8;font-size:11px;margin:0">${brand}${s.reply_to?' · '+s.reply_to:''} · <a href="#" style="color:#94a3b8">Unsubscribe</a></p></td></tr></table></td></tr></table></body></html>`;
 }
 
 async function loadTemplates() {
@@ -1345,6 +1352,8 @@ function openTemplateByIndex(i) {
   const isHtml = /<[a-z]/i.test(rawBody);
   const plainBody = isHtml ? rawBody.replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').trim() : rawBody.replace(/\\n/g,'\n').trim();
   document.getElementById('tplCustomMsg').value = plainBody;
+  const imgEl = document.getElementById('tplImageUrl');
+  if (imgEl) imgEl.value = t.image_url || '';
   updateTplPreview();
   openModal('templateModal');
 }
@@ -1353,7 +1362,8 @@ function updateTplPreview() {
   const name = document.getElementById('tplName').value;
   const subject = document.getElementById('tplSubject').value;
   const msg = document.getElementById('tplCustomMsg').value;
-  const html = buildEmailPreview(name, subject, msg);
+  const img = document.getElementById('tplImageUrl')?.value || '';
+  const html = buildEmailPreview(name, subject, msg, null, img);
   const frame = document.getElementById('tplPreview');
   frame.srcdoc = html;
 }
@@ -1362,7 +1372,8 @@ async function saveTemplate() {
   const name = document.getElementById('tplName').value;
   const subject = document.getElementById('tplSubject').value;
   const body = document.getElementById('tplCustomMsg').value;
-  await api('/v2-save-template', {method:'POST', body: JSON.stringify({template_name: name, subject, body})});
+  const image_url = document.getElementById('tplImageUrl')?.value || '';
+  await api('/v2-save-template', {method:'POST', body: JSON.stringify({template_name: name, subject, body, image_url})});
   toast('Template saved', 'success');
   closeModal('templateModal');
   loadTemplates();
