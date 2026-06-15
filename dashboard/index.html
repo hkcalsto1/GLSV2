@@ -675,7 +675,8 @@ tr:hover td{background:#fafcff}
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('importModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="doImport()">Import</button>
+      <button class="btn btn-outline" onclick="doImport(false)">Import Only</button>
+      <button class="btn btn-primary" onclick="doImport(true)">Import & Send Invites</button>
     </div>
   </div>
 </div>
@@ -1849,7 +1850,7 @@ function setImportMode(mode) {
   document.getElementById('impTabCsv').style.cssText = mode==='csv'?'font-weight:700;border-color:#3b82f6;color:#3b82f6':'';
 }
 
-async function doImport() {
+async function doImport(sendInvites = false) {
   const paste = document.getElementById('importPaste').value.trim();
   const file = document.getElementById('importCsvFile').files[0];
   let contacts = [];
@@ -1870,14 +1871,33 @@ async function doImport() {
     }).filter(c=>c.email);
   }
   if (!contacts.length) return toast('No valid contacts found', 'error');
-  let added = 0;
-  for (const c of contacts) {
-    await api('/v2-add-contact', {method:'POST', body: JSON.stringify(c)});
-    added++;
-  }
-  toast(`Imported ${added} contacts`, 'success');
-  closeModal('importModal');
-  loadContacts();
+
+  const preview = contacts.slice(0, 5).map(c => `• ${c.name} (${c.email})`).join('\n');
+  const more = contacts.length > 5 ? `\n…and ${contacts.length - 5} more` : '';
+  const action = sendInvites ? 'Import & Send Invites' : 'Import Only';
+  const detail = sendInvites
+    ? `Import ${contacts.length} contact${contacts.length!==1?'s':''} and immediately send each an invite email:\n\n${preview}${more}\n\nTemplate: Invite`
+    : `Import ${contacts.length} contact${contacts.length!==1?'s':''} (no emails sent yet):\n\n${preview}${more}`;
+
+  showConfirm(action, detail, async () => {
+    closeModal('importModal');
+    toast(`Importing ${contacts.length} contacts...`, '');
+    let added = 0;
+    for (const c of contacts) {
+      try { await api('/v2-add-contact', {method:'POST', body: JSON.stringify(c)}); added++; } catch(e) {}
+    }
+    toast(`✅ ${added} contact${added!==1?'s':''} imported`, 'success');
+
+    if (sendInvites) {
+      toast(`Sending ${added} invites...`, '');
+      let sent = 0;
+      for (const c of contacts) {
+        try { await api('/v2-invite', {method:'POST', body: JSON.stringify({email:c.email, name:c.name, company:c.company||''})}); sent++; } catch(e) {}
+      }
+      toast(`✅ ${sent} invite${sent!==1?'s':''} sent`, 'success');
+    }
+    loadContacts();
+  }, sendInvites ? 'Import & Send' : 'Import', 'btn-primary');
 }
 
 // ─── MODALS ───────────────────────────────────────────────────────────────────
