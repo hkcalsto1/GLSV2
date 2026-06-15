@@ -3695,6 +3695,124 @@
         400,
         4600
       ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "v2-track-view",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "tv-001",
+      "name": "Track View Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        7200
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "mode": "id",
+          "value": "1fQ9_0mFIbOEiiKA1lnzOQqpLD0SbRKH0Qe6pXx6vLSk"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "Settings"
+        },
+        "options": {}
+      },
+      "id": "tv-002",
+      "name": "Read Settings TV",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        200,
+        7200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "AeQwGHbDftGYpvZc",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "var rows=$input.all().map(i=>i.json);\nvar viewRow=rows.find(r=>r.key==='form_views');\nvar count=parseInt(viewRow&&viewRow.value?viewRow.value:0)+1;\nreturn [{json:{key:'form_views',value:String(count)}}];"
+      },
+      "id": "tv-003",
+      "name": "Increment View Count",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        7200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "mode": "id",
+          "value": "1fQ9_0mFIbOEiiKA1lnzOQqpLD0SbRKH0Qe6pXx6vLSk"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "Settings"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "key": "={{ $json.key }}",
+            "value": "={{ $json.value }}"
+          },
+          "matchingColumns": [
+            "key"
+          ]
+        },
+        "options": {}
+      },
+      "id": "tv-004",
+      "name": "Upsert View Count",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        600,
+        7200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "AeQwGHbDftGYpvZc",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"success\":true}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "tv-005",
+      "name": "Respond Track View",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        7200
+      ]
     }
   ],
   "connections": {
@@ -4998,6 +5116,50 @@
         [
           {
             "node": "Respond Edit Slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Track View Webhook": {
+      "main": [
+        [
+          {
+            "node": "Read Settings TV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Settings TV": {
+      "main": [
+        [
+          {
+            "node": "Increment View Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Increment View Count": {
+      "main": [
+        [
+          {
+            "node": "Upsert View Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert View Count": {
+      "main": [
+        [
+          {
+            "node": "Respond Track View",
             "type": "main",
             "index": 0
           }

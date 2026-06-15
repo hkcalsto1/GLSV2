@@ -112,6 +112,9 @@ const STD_FIELDS = [
 const STD_IDS = new Set(STD_FIELDS.map(sf => sf.id));
 
 async function init() {
+  // Fire-and-forget view counter — don't await, don't block form load
+  fetch(N8N + '/v2-track-view').catch(() => {});
+
   try {
     const [cfgRes, slotsRes] = await Promise.all([
       fetch(N8N + '/v2-form-config').then(r => r.json()),
@@ -131,6 +134,17 @@ async function init() {
     }).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
 
     applyBranding(config);
+
+    // Auto-close: if event_dates is in the past, show closed state
+    if (config.event_dates) {
+      const closedEl = checkEventClosed(config.event_dates);
+      if (closedEl) {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('formState').innerHTML = closedEl;
+        document.getElementById('formState').style.display = 'block';
+        return;
+      }
+    }
 
     let stdCfg = {};
     try { stdCfg = JSON.parse(config.form_std_config || '{}'); } catch(e) {}
@@ -236,14 +250,21 @@ function renderSlots() {
     document.getElementById('submitBtn').disabled = true;
     return;
   }
-  el.innerHTML = slots.map(s => `
-    <label class="slot-option">
+  el.innerHTML = slots.map(s => {
+    const remaining = parseInt(s.capacity||1) - parseInt(s.booked_count||0);
+    const urgency = remaining <= 1
+      ? `<span style="color:#ef4444;font-weight:700">⚡ Last spot!</span>`
+      : remaining <= 3
+      ? `<span style="color:#f59e0b;font-weight:600">Only ${remaining} left</span>`
+      : `<span style="color:#10b981">${remaining} spots available</span>`;
+    return `<label class="slot-option">
       <input type="radio" name="slot_id" value="${esc(s.slot_Id)}" data-date="${esc(s.date)}" data-time="${esc(s.time||'')}" required>
       <div>
         <div class="slot-label">${fmtDate(s.date)} · ${s.time||''}</div>
-        <div class="slot-sub">${parseInt(s.capacity||1) - parseInt(s.booked_count||0)} spot(s) remaining</div>
+        <div class="slot-sub">${urgency}</div>
       </div>
-    </label>`).join('');
+    </label>`;
+  }).join('');
 }
 
 async function submitForm(e) {
@@ -305,6 +326,35 @@ async function submitForm(e) {
     btn.disabled = false;
     btn.textContent = config.form_submit_btn || 'Submit Booking';
   }
+}
+
+function checkEventClosed(eventDates) {
+  // Try to parse the last date from event_dates string
+  // Handles formats like "Jun 24-26, 2026" or "June 24–26, 2026" or "2026-06-26"
+  const now = new Date();
+  const str = String(eventDates || '');
+  // Extract year and last day mentioned
+  const isoMatch = str.match(/(\d{4}-\d{2}-\d{2})/g);
+  const writtenMatch = str.match(/(\w+)\s+(\d+)[–\-—](\d+),?\s+(\d{4})/);
+  const singleMatch = str.match(/(\w+)\s+(\d+),?\s+(\d{4})/);
+  let lastDate = null;
+  if (isoMatch) {
+    lastDate = new Date(isoMatch[isoMatch.length - 1]);
+  } else if (writtenMatch) {
+    lastDate = new Date(`${writtenMatch[1]} ${writtenMatch[3]}, ${writtenMatch[4]}`);
+  } else if (singleMatch) {
+    lastDate = new Date(`${singleMatch[1]} ${singleMatch[2]}, ${singleMatch[3]}`);
+  }
+  if (!lastDate || isNaN(lastDate)) return null;
+  // Add 1 day buffer — form closes at end of last event day
+  lastDate.setDate(lastDate.getDate() + 1);
+  if (now < lastDate) return null;
+  const color = document.documentElement.style.getPropertyValue('--brand-color') || '#0f1c2e';
+  return `<div style="padding:48px 32px;text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">🔒</div>
+    <h2 style="font-size:20px;font-weight:700;color:${color};margin-bottom:8px">Registration Closed</h2>
+    <p style="font-size:14px;color:#64748b;line-height:1.6">Booking for this event has now closed.<br>Please contact us directly for enquiries.</p>
+  </div>`;
 }
 
 function fmtDate(d) {

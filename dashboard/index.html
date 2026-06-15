@@ -183,6 +183,27 @@ tr:hover td{background:#fafcff}
 
 /* RESPONSIVE */
 @media(max-width:768px){.sidebar{width:100%;height:auto;position:relative}.main{margin-left:0}.form-row,.form-row-3{grid-template-columns:1fr}}
+
+/* CAMPAIGNS */
+.segment-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.segment-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.07);border:2px solid #e2e8f0;transition:border-color 0.15s}
+.segment-card .seg-count{font-size:36px;font-weight:800;color:#0f1c2e;line-height:1}
+.segment-card .seg-label{font-size:13px;font-weight:700;color:#374151;margin:6px 0 4px}
+.segment-card .seg-desc{font-size:12px;color:#64748b;line-height:1.5;margin-bottom:16px}
+.blast-history{background:#f8fafc;border-radius:8px;padding:14px 16px;font-size:13px;color:#64748b}
+
+/* ONBOARDING */
+.checklist-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9}
+.checklist-item:last-child{border-bottom:none}
+.check-icon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px}
+.check-icon.done{background:#f0fdf4;color:#10b981}
+.check-icon.todo{background:#f1f5f9;color:#94a3b8}
+.check-label{flex:1;font-size:14px;color:#374151}
+.check-action{font-size:12px;color:#3b82f6;cursor:pointer;font-weight:600}
+.check-action:hover{text-decoration:underline}
+
+/* QR */
+#qrContainer canvas{border-radius:8px}
 </style>
 </head>
 <body>
@@ -229,6 +250,10 @@ tr:hover td{background:#fafcff}
       <div class="nav-item" onclick="showTab('team')" id="nav-team">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span data-i18n="nav_team">Team</span>
+      </div>
+      <div class="nav-item" onclick="showTab('campaigns')" id="nav-campaigns">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <span>Campaigns</span>
       </div>
       <div class="nav-item" onclick="showTab('formbuilder')" id="nav-formbuilder">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -374,6 +399,22 @@ tr:hover td{background:#fafcff}
       </div>
     </div>
 
+    <!-- CAMPAIGNS TAB -->
+    <div class="tab-pane" id="tab-campaigns">
+      <div class="page-header">
+        <h1>Campaigns</h1>
+        <p>Send targeted follow-up emails to re-engage contacts who haven't booked yet</p>
+      </div>
+      <div class="segment-grid" id="segmentGrid">
+        <div class="loading-state" style="grid-column:1/-1"><div class="spinner"></div></div>
+      </div>
+      <div class="section">
+        <h3>Blast History</h3>
+        <p class="section-desc">Record of recent campaign sends</p>
+        <div class="blast-history" id="blastHistory">No blasts sent yet.</div>
+      </div>
+    </div>
+
     <!-- FORM BUILDER TAB -->
     <div class="tab-pane" id="tab-formbuilder">
       <div class="page-header">
@@ -434,6 +475,13 @@ tr:hover td{background:#fafcff}
       <div class="page-header">
         <h1 data-i18n="settings_h1">Settings</h1>
         <p>Configure your event, email, and branding</p>
+      </div>
+
+      <!-- Onboarding Checklist -->
+      <div class="section" id="onboardingSection">
+        <h3>🚀 Setup Checklist</h3>
+        <p class="section-desc">Complete these steps to go live. Green = done.</p>
+        <div id="onboardingList"></div>
       </div>
 
       <!-- Event -->
@@ -501,6 +549,28 @@ tr:hover td{background:#fafcff}
           </div>
         </div>
         <button class="btn btn-primary" onclick="saveSettings(['brand_name','logo_url','brand_color'])" data-i18n="save_branding">Save Branding</button>
+      </div>
+
+      <!-- QR Code -->
+      <div class="section">
+        <h3>Form QR Code</h3>
+        <p class="section-desc">Print on booth materials — visitors scan to book instantly</p>
+        <div id="qrContainer" style="margin:16px 0;display:inline-block;padding:12px;background:#fff;border:1.5px solid #e2e8f0;border-radius:8px"></div>
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+          <button class="btn btn-outline btn-sm" onclick="downloadQR()">Download PNG</button>
+          <span style="font-size:12px;color:#94a3b8" id="qrUrlLabel"></span>
+        </div>
+      </div>
+
+      <!-- Embed Code -->
+      <div class="section">
+        <h3>Embed Code</h3>
+        <p class="section-desc">Paste this into your website to embed the booking form in an iframe</p>
+        <div style="position:relative">
+          <textarea id="embedCode" readonly rows="3" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:monospace;font-size:12px;color:#374151;background:#f8fafc;resize:none"></textarea>
+          <button class="btn btn-outline btn-sm" onclick="copyEmbed()" style="position:absolute;top:8px;right:8px">Copy</button>
+        </div>
+        <div class="hint" style="margin-top:6px">You can adjust the height (default 680px) to fit your page layout.</div>
       </div>
 
       <!-- Email Messages -->
@@ -802,6 +872,7 @@ tr:hover td{background:#fafcff}
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const N8N = 'https://n8n.okahh.com/webhook';
@@ -855,11 +926,11 @@ function doLogout() {
 async function initApp() {
   document.getElementById('formLinkBtn').href = BOOKING_FORM_URL;
   document.getElementById('sidebarUrl').textContent = window.location.hostname;
-  loadSettings();
-  loadContacts();
-  loadStaff();
-  loadSlots();
+  await Promise.all([loadSettings(), loadContacts(), loadStaff(), loadSlots()]);
   loadFormFields();
+  renderOnboarding();
+  renderQR();
+  renderEmbedCode();
 }
 
 function getAuth() { return sessionStorage.getItem('v2_auth') || ''; }
@@ -884,8 +955,9 @@ function showTab(name) {
   if (name === 'templates') loadTemplates();
   if (name === 'slots') loadSlots();
   if (name === 'team') loadStaff();
+  if (name === 'campaigns') loadCampaigns();
   if (name === 'formbuilder') loadFormFields();
-  if (name === 'settings') loadSettings();
+  if (name === 'settings') { loadSettings(); renderQR(); renderEmbedCode(); renderOnboarding(); }
 }
 
 // ─── SETTINGS ─────────────────────────────────────────────────────────────────
@@ -918,6 +990,12 @@ async function loadSettings() {
     document.getElementById('sidebarEvent').textContent = event;
     document.getElementById('loginBrand').textContent = brand;
     document.title = brand + ' Dashboard';
+    // Update onboarding + QR if Settings tab is active
+    if (document.getElementById('tab-settings').classList.contains('active')) {
+      renderOnboarding();
+      renderQR();
+      renderEmbedCode();
+    }
   } catch(e) {}
 }
 
@@ -1031,8 +1109,10 @@ function renderContactStats(contacts) {
     else if (s === 'sent') stats.sent++;
     else stats.not_sent++;
   });
+  const views = parseInt(settingsCache.form_views || 0);
   document.getElementById('contactStats').innerHTML = `
-    <div class="stat-card"><div class="label">Total</div><div class="value">${stats.total}</div></div>
+    <div class="stat-card"><div class="label">Form Views</div><div class="value blue">${views}</div></div>
+    <div class="stat-card"><div class="label">Total Contacts</div><div class="value">${stats.total}</div></div>
     <div class="stat-card"><div class="label">Not Sent</div><div class="value amber">${stats.not_sent}</div></div>
     <div class="stat-card"><div class="label">Invited</div><div class="value blue">${stats.sent}</div></div>
     <div class="stat-card"><div class="label">Opened</div><div class="value blue">${stats.opened}</div></div>
@@ -1882,6 +1962,157 @@ function setLang(lang) {
 }
 
 function toggleLang() { setLang(currentLang === 'en' ? 'zh' : 'en'); }
+
+// ─── CAMPAIGNS ───────────────────────────────────────────────────────────────
+const SEGMENTS = [
+  { id: 'not_opened',         label: 'Not Opened',         desc: 'Invite sent but email was never opened. Send a fresh nudge.', statuses: ['sent'], color: '#f59e0b', template: 'reminder_manual' },
+  { id: 'opened_not_clicked', label: 'Opened, Didn\'t Click', desc: 'Opened the invite but didn\'t click the booking link.', statuses: ['opened'], color: '#3b82f6', template: 'reminder_manual' },
+  { id: 'clicked_not_booked', label: 'Clicked, Didn\'t Book', desc: 'Clicked the link but left without booking. High intent.', statuses: ['clicked'], color: '#10b981', template: 'reminder_manual' },
+];
+
+let blastLog = [];
+
+function loadCampaigns() {
+  const grid = document.getElementById('segmentGrid');
+  if (!allContacts.length) {
+    grid.innerHTML = '<div class="loading-state" style="grid-column:1/-1"><div class="spinner"></div></div>';
+    // Load contacts if not yet loaded
+    loadContacts().then(() => renderSegmentCards());
+    return;
+  }
+  renderSegmentCards();
+}
+
+function renderSegmentCards() {
+  const grid = document.getElementById('segmentGrid');
+  grid.innerHTML = SEGMENTS.map(seg => {
+    const contacts = allContacts.filter(c => seg.statuses.includes(c.status || 'not_sent'));
+    const count = contacts.length;
+    return `<div class="segment-card" style="border-color:${seg.color}20">
+      <div class="seg-count" style="color:${seg.color}">${count}</div>
+      <div class="seg-label">${esc(seg.label)}</div>
+      <div class="seg-desc">${esc(seg.desc)}</div>
+      <button class="btn btn-sm" style="background:${seg.color};color:#fff;width:100%" ${count===0?'disabled':''} onclick="confirmBlast('${seg.id}','${esc(seg.label)}',${count})">
+        ${count === 0 ? 'None to blast' : `Blast ${count} contacts →`}
+      </button>
+    </div>`;
+  }).join('');
+  renderBlastHistory();
+}
+
+function confirmBlast(segId, segLabel, count) {
+  if (count === 0) return;
+  showConfirm(
+    `Blast "${segLabel}"`,
+    `Send a reminder email to ${count} contact${count>1?'s':''} in this segment? This uses your Reminder email template.`,
+    () => runBlast(segId)
+  );
+}
+
+async function runBlast(segId) {
+  const seg = SEGMENTS.find(s => s.id === segId);
+  if (!seg) return;
+  const contacts = allContacts.filter(c => seg.statuses.includes(c.status || 'not_sent'));
+  if (!contacts.length) return toast('No contacts in this segment', 'error');
+
+  toast(`Blasting ${contacts.length} contacts... this may take a moment`, '');
+  let sent = 0, failed = 0;
+  for (const c of contacts) {
+    try {
+      await api('/v2-remind', {method:'POST', body: JSON.stringify({email: c.email, name: c.name, company: c.company || ''})});
+      sent++;
+    } catch(e) { failed++; }
+  }
+
+  const entry = {segLabel: seg.label, sent, failed, ts: new Date().toLocaleString()};
+  blastLog.unshift(entry);
+  localStorage.setItem('v2_blast_log', JSON.stringify(blastLog.slice(0,20)));
+  toast(`Blast complete: ${sent} sent${failed ? `, ${failed} failed` : ''}`, 'success');
+  renderBlastHistory();
+  loadContacts();
+}
+
+function renderBlastHistory() {
+  const saved = localStorage.getItem('v2_blast_log');
+  if (saved) try { blastLog = JSON.parse(saved); } catch(e) {}
+  const el = document.getElementById('blastHistory');
+  if (!el) return;
+  if (!blastLog.length) { el.textContent = 'No blasts sent yet.'; return; }
+  el.innerHTML = blastLog.map(b =>
+    `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9">
+      <span style="font-weight:600;color:#374151">${esc(b.segLabel)}</span>
+      <span style="color:#64748b">${b.sent} sent${b.failed?`, ${b.failed} failed`:''} &nbsp;·&nbsp; ${esc(b.ts)}</span>
+    </div>`
+  ).join('');
+}
+
+// ─── QR CODE ─────────────────────────────────────────────────────────────────
+function renderQR() {
+  const container = document.getElementById('qrContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  if (typeof QRCode === 'undefined') return;
+  const url = BOOKING_FORM_URL;
+  document.getElementById('qrUrlLabel').textContent = url;
+  new QRCode(container, {text: url, width: 180, height: 180, colorDark: settingsCache.brand_color || '#0f1c2e', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M});
+}
+
+function downloadQR() {
+  const canvas = document.querySelector('#qrContainer canvas');
+  if (!canvas) return toast('QR code not yet generated', 'error');
+  const a = document.createElement('a');
+  a.download = 'booking-qr.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+  toast('QR code downloaded', 'success');
+}
+
+// ─── EMBED CODE ──────────────────────────────────────────────────────────────
+function renderEmbedCode() {
+  const el = document.getElementById('embedCode');
+  if (!el) return;
+  el.value = `<iframe src="${BOOKING_FORM_URL}" width="100%" height="680" frameborder="0" style="border:none;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.1)"></iframe>`;
+}
+
+function copyEmbed() {
+  const el = document.getElementById('embedCode');
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => toast('Embed code copied!', 'success'));
+}
+
+// ─── ONBOARDING CHECKLIST ────────────────────────────────────────────────────
+function renderOnboarding() {
+  const el = document.getElementById('onboardingList');
+  if (!el) return;
+  const s = settingsCache;
+  const checks = [
+    { done: !!(s.event_name), label: 'Set event name', action: () => document.getElementById('s_event_name').focus(), actionLabel: 'Set it →' },
+    { done: !!(s.logo_url), label: 'Upload your logo URL', action: () => document.getElementById('s_logo_url').focus(), actionLabel: 'Add it →' },
+    { done: !!(s.brand_color && s.brand_color !== '#0f1c2e'), label: 'Set brand colour', action: () => document.getElementById('s_brand_color').click(), actionLabel: 'Pick colour →' },
+    { done: !!(s.from_name), label: 'Set email From Name', action: () => document.getElementById('s_from_name').focus(), actionLabel: 'Set it →' },
+    { done: allSlots.length > 0, label: 'Add at least one time slot', action: () => showTab('slots'), actionLabel: 'Add slot →' },
+    { done: allStaff.length > 0, label: 'Add at least one team member', action: () => showTab('team'), actionLabel: 'Add member →' },
+    { done: allContacts.length > 0, label: 'Import your first contacts', action: () => { showTab('contacts'); openModal('importModal'); }, actionLabel: 'Import →' },
+    { done: !!(s.booking_link), label: 'Set booking form URL in Settings', action: () => toast('Add the booking_link key in your Settings Google Sheet', ''), actionLabel: 'How? →' },
+  ];
+  const doneCount = checks.filter(c => c.done).length;
+  const pct = Math.round(doneCount / checks.length * 100);
+  el.innerHTML = `
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">
+        <span>Progress</span><span>${doneCount}/${checks.length} complete</span>
+      </div>
+      <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${pct===100?'#10b981':'#3b82f6'};border-radius:3px;transition:width 0.3s"></div>
+      </div>
+    </div>
+    ${checks.map(c => `
+    <div class="checklist-item">
+      <div class="check-icon ${c.done ? 'done' : 'todo'}">${c.done ? '✓' : '○'}</div>
+      <div class="check-label" style="${c.done ? 'text-decoration:line-through;color:#94a3b8' : ''}">${esc(c.label)}</div>
+      ${!c.done ? `<span class="check-action" onclick="(${c.action.toString()})()">${esc(c.actionLabel)}</span>` : ''}
+    </div>`).join('')}`;
+}
 
 // ─── AUTO-CHECK AUTH ON LOAD ──────────────────────────────────────────────────
 setLang(currentLang);
