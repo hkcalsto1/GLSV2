@@ -280,9 +280,9 @@ function renderSlots() {
   const dateTabs = dates.map(d => {
     const count = byDate[d].length;
     const isActive = d === selectedSlotDate;
-    const dt = new Date(d + 'T00:00:00');
-    const dayName = dt.toLocaleDateString('en-GB', {weekday:'short'});
-    const dayDate = dt.toLocaleDateString('en-GB', {day:'numeric', month:'short'});
+    const dt = parseDate(d);
+    const dayName = dt ? dt.toLocaleDateString('en-GB', {weekday:'short'}) : d;
+    const dayDate = dt ? dt.toLocaleDateString('en-GB', {day:'numeric', month:'short'}) : '';
     return `<button type="button" class="date-tab${isActive ? ' active' : ''}" onclick="selectSlotDate('${esc(d)}')">
       <div class="date-tab-day">${dayName}</div>
       <div class="date-tab-date">${dayDate}</div>
@@ -307,8 +307,8 @@ function renderSlots() {
     </label>`;
   }).join('');
 
-  const selDate = new Date(selectedSlotDate + 'T00:00:00');
-  const selLabel = selDate.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
+  const selDate = parseDate(selectedSlotDate);
+  const selLabel = selDate ? selDate.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'}) : selectedSlotDate;
 
   el.innerHTML = `
     <div class="date-tabs">${dateTabs}</div>
@@ -414,6 +414,18 @@ function checkEventClosed(eventDates) {
   </div>`;
 }
 
+function parseDate(d) {
+  if (!d) return null;
+  const s = String(d).trim();
+  // MM/DD/YYYY from Google Sheets
+  const mdy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mdy) return new Date(+mdy[3], +mdy[1] - 1, +mdy[2]);
+  // YYYY-MM-DD ISO
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3]);
+  const dt = new Date(s);
+  return isNaN(dt) ? null : dt;
+}
 function fmtDate(d) {
   if (!d) return '';
   try { return new Date(d).toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'long',year:'numeric'}); }
