@@ -1172,9 +1172,15 @@ async function remindOne(email, name, company) {
 }
 
 async function inviteAll() {
-  const res = await api('/v2-invite-all', {method:'POST', body: JSON.stringify({})});
-  toast('Inviting ' + (res.sent||0) + ' contacts...', 'success');
-  setTimeout(loadContacts, 3000);
+  const uninvited = allContacts.filter(c => (!c.invite_sent || c.invite_sent === 'no') && c.status !== 'deleted' && c.status !== 'unsubscribed');
+  if (!uninvited.length) return toast('No uninvited contacts', '');
+  toast(`Sending ${uninvited.length} invites...`, '');
+  let sent = 0;
+  for (const c of uninvited) {
+    try { await api('/v2-invite', {method:'POST', body: JSON.stringify({email:c.email, name:c.name, company:c.company||''})}); sent++; } catch(e) {}
+  }
+  toast(`${sent} invite${sent!==1?'s':''} sent`, 'success');
+  loadContacts();
 }
 
 function deleteContact(email, name) {
