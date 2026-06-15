@@ -3614,6 +3614,86 @@
           "name": "Google Sheets"
         }
       }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "v2-edit-slot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "esl-001",
+      "name": "Edit Slot Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        4600
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "mode": "id",
+          "value": "1fQ9_0mFIbOEiiKA1lnzOQqpLD0SbRKH0Qe6pXx6vLSk"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "Slots"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "slot_Id": "={{ ($input.first().json.body||$input.first().json).slot_id }}",
+            "date": "={{ ($input.first().json.body||$input.first().json).date }}",
+            "time": "={{ ($input.first().json.body||$input.first().json).time }}",
+            "capacity": "={{ ($input.first().json.body||$input.first().json).capacity }}"
+          },
+          "matchingColumns": [
+            "slot_Id"
+          ]
+        },
+        "options": {}
+      },
+      "id": "esl-002",
+      "name": "Update Slot",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        200,
+        4600
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "AeQwGHbDftGYpvZc",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"success\":true}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "esl-003",
+      "name": "Respond Edit Slot",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        4600
+      ]
     }
   ],
   "connections": {
@@ -4899,6 +4979,28 @@
           }
         ],
         []
+      ]
+    },
+    "Edit Slot Webhook": {
+      "main": [
+        [
+          {
+            "node": "Update Slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Slot": {
+      "main": [
+        [
+          {
+            "node": "Respond Edit Slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
