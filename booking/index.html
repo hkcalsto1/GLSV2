@@ -100,6 +100,16 @@ const N8N = 'https://n8n.okahh.com/webhook';
 let config = {};
 let slots = [];
 
+const STD_FIELDS = [
+  { id: 'name',    labelEn: 'Full Name',                  labelZh: '姓名',             type: 'text',     lockRequired: true,  autocomplete: 'name' },
+  { id: 'email',   labelEn: 'Email Address',               labelZh: '电邮地址',          type: 'email',    lockRequired: true,  autocomplete: 'email' },
+  { id: 'company', labelEn: 'Company',                     labelZh: '公司名称',          type: 'text',     lockRequired: false, autocomplete: 'organization' },
+  { id: 'title',   labelEn: 'Job Title',                   labelZh: '职位',              type: 'text',     lockRequired: false, autocomplete: 'organization-title' },
+  { id: 'phone',   labelEn: 'Phone / WhatsApp',            labelZh: '电话 / WhatsApp',  type: 'tel',      lockRequired: false, autocomplete: 'tel' },
+  { id: 'notes',   labelEn: 'Notes / Topics to Discuss',   labelZh: '备注 / 讨论话题',  type: 'textarea', lockRequired: false, autocomplete: 'off' },
+];
+const STD_IDS = new Set(STD_FIELDS.map(sf => sf.id));
+
 async function init() {
   try {
     const [cfgRes, slotsRes] = await Promise.all([
@@ -120,10 +130,15 @@ async function init() {
     }).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
 
     applyBranding(config);
-    renderFormFields(config.fields || []);
+
+    let stdCfg = {};
+    try { stdCfg = JSON.parse(config.form_std_config || '{}'); } catch(e) {}
+
+    const container = document.getElementById('dynamicFields');
+    container.innerHTML = renderStdFieldsHtml(stdCfg) + renderCustomFieldsHtml(config.fields || []);
+
     renderSlots();
 
-    // Unsubscribe link
     const params = new URLSearchParams(window.location.search);
     const emailParam = params.get('email');
     if (emailParam) {
@@ -162,29 +177,55 @@ function applyBranding(cfg) {
   }
 }
 
-function renderFormFields(fields) {
-  const container = document.getElementById('dynamicFields');
-  container.innerHTML = fields.filter(f => f.enabled !== 'no').map(f => {
-    const req = f.required === 'yes';
-    const reqAttr = req ? 'required' : '';
-    const reqMark = req ? '<span class="required">*</span>' : '';
-    const name = 'field_' + (f.field_id || f.label);
-    const opts = (f.options || '').split(',').map(o => o.trim()).filter(Boolean);
+function renderStdFieldsHtml(stdCfg) {
+  return STD_FIELDS
+    .filter(sf => {
+      const sc = stdCfg[sf.id];
+      return !sc || sc.enabled !== false;
+    })
+    .map(sf => {
+      const sc = stdCfg[sf.id] || {};
+      const label = sc.labelEn || sf.labelEn;
+      const req = sf.lockRequired || (sc.required !== false);
+      const reqAttr = req ? 'required' : '';
+      const reqMark = req ? '<span class="required">*</span>' : '';
+      const name = 'std_' + sf.id;
+      let input = '';
+      if (sf.type === 'textarea') {
+        input = `<textarea name="${name}" ${reqAttr} rows="3" autocomplete="off"></textarea>`;
+      } else {
+        input = `<input type="${sf.type}" name="${name}" ${reqAttr} autocomplete="${sf.autocomplete}">`;
+      }
+      return `<div class="form-group"><label>${esc(label)}${reqMark}</label>${input}</div>`;
+    }).join('');
+}
 
-    let input = '';
-    if (f.type === 'textarea') {
-      input = `<textarea name="${esc(name)}" ${reqAttr} placeholder="${esc(f.placeholder||'')}"></textarea>`;
-    } else if (f.type === 'select') {
-      input = `<select name="${esc(name)}" ${reqAttr}><option value="">Select...</option>${opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>`;
-    } else if (f.type === 'radio') {
-      input = `<div class="radio-group">${opts.map(o=>`<label><input type="radio" name="${esc(name)}" value="${esc(o)}" ${reqAttr}><span>${esc(o)}</span></label>`).join('')}</div>`;
-    } else if (f.type === 'checkbox') {
-      input = `<div class="checkbox-group">${opts.map(o=>`<label><input type="checkbox" name="${esc(name)}_${esc(o)}" value="${esc(o)}"> ${esc(o)}</label>`).join('')}</div>`;
-    } else {
-      input = `<input type="${f.type||'text'}" name="${esc(name)}" ${reqAttr} placeholder="${esc(f.placeholder||'')}">`;
-    }
-    return `<div class="form-group"><label>${esc(f.label||f.field_id)}${reqMark}</label>${input}</div>`;
-  }).join('');
+function renderCustomFieldsHtml(fields) {
+  return fields
+    .filter(f => f.enabled !== 'no' && !STD_IDS.has(f.field_id))
+    .map(f => {
+      if (f.type === 'info') {
+        return `<div style="background:#f8fafc;border-left:3px solid var(--brand-color,#0f1c2e);padding:12px 16px;border-radius:6px;margin-bottom:18px"><p style="font-size:14px;color:#374151;line-height:1.6;margin:0">${esc(f.label)}</p></div>`;
+      }
+      const req = f.required === 'yes';
+      const reqAttr = req ? 'required' : '';
+      const reqMark = req ? '<span class="required">*</span>' : '';
+      const name = 'field_' + (f.field_id || f.label);
+      const opts = (f.options || '').split(',').map(o => o.trim()).filter(Boolean);
+      let input = '';
+      if (f.type === 'textarea') {
+        input = `<textarea name="${esc(name)}" ${reqAttr}></textarea>`;
+      } else if (f.type === 'select') {
+        input = `<select name="${esc(name)}" ${reqAttr}><option value="">Select...</option>${opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>`;
+      } else if (f.type === 'radio') {
+        input = `<div style="display:flex;flex-direction:column;gap:8px">${opts.map(o=>`<label style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer;background:#fff;width:100%;box-sizing:border-box"><input type="radio" name="${esc(name)}" value="${esc(o)}" ${reqAttr} style="flex-shrink:0;width:16px;height:16px;accent-color:var(--brand-color,#0f1c2e)"><span style="font-size:14px;color:#374151;flex:1">${esc(o)}</span></label>`).join('')}</div>`;
+      } else if (f.type === 'checkbox') {
+        input = `<div style="display:flex;flex-direction:column;gap:8px">${opts.map(o=>`<label style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer;background:#fff;width:100%;box-sizing:border-box"><input type="checkbox" name="${esc(name)}_${esc(o)}" value="${esc(o)}" style="flex-shrink:0;width:16px;height:16px;accent-color:var(--brand-color,#0f1c2e)"><span style="font-size:14px;color:#374151;flex:1">${esc(o)}</span></label>`).join('')}</div>`;
+      } else {
+        input = `<input type="${f.type||'text'}" name="${esc(name)}" ${reqAttr}>`;
+      }
+      return `<div class="form-group"><label>${esc(f.label||f.field_id)}${reqMark}</label>${input}</div>`;
+    }).join('');
 }
 
 function renderSlots() {
@@ -217,7 +258,13 @@ async function submitForm(e) {
     const data = new FormData(form);
     const payload = {};
 
-    // Collect all field values
+    // Standard fields
+    STD_FIELDS.forEach(sf => {
+      const el = form.querySelector(`[name="std_${sf.id}"]`);
+      if (el) payload[sf.id] = el.value.trim();
+    });
+
+    // Custom fields
     for (const [key, val] of data.entries()) {
       if (key.startsWith('field_')) {
         const cleanKey = key.replace(/^field_/, '');
@@ -236,8 +283,8 @@ async function submitForm(e) {
     payload.date = selectedSlot.dataset.date;
     payload.time = selectedSlot.dataset.time;
 
-    // Map common fields
-    payload.name = payload.name || payload.full_name || payload.fullname || '';
+    // Ensure backwards-compat keys exist
+    payload.name = payload.name || '';
     payload.email = payload.email || '';
     payload.company = payload.company || '';
 

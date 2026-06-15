@@ -404,8 +404,15 @@ tr:hover td{background:#fafcff}
             <button class="btn btn-primary" onclick="saveFormHeader()" data-i18n="save_header">Save Header</button>
           </div>
           <div class="section">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <div><h3>Standard Fields</h3><p class="section-desc" style="margin:0">Core fields on every booking — toggle visibility, required, and rename labels (EN / ZH)</p></div>
+              <button class="btn btn-primary btn-sm" onclick="saveStdFields()">Save</button>
+            </div>
+            <div id="stdFieldsList" style="margin-top:16px"><div class="loading-state"><div class="spinner"></div></div></div>
+          </div>
+          <div class="section">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-              <div><h3 data-i18n="form_fields">Form Fields</h3><p class="section-desc" style="margin:0">Fields appear on your booking form in this order</p></div>
+              <div><h3 data-i18n="form_fields">Custom Fields</h3><p class="section-desc" style="margin:0">Extra fields appended after standard fields, in this order</p></div>
               <button class="btn btn-primary btn-sm" onclick="openModal('addFieldModal')" data-i18n="add_field">+ Add Field</button>
             </div>
             <div id="fieldsList"><div class="loading-state"><div class="spinner"></div></div></div>
@@ -720,8 +727,8 @@ tr:hover td{background:#fafcff}
   <div class="modal">
     <h2 id="fieldModalTitle">Add Form Field</h2>
     <input type="hidden" id="fld_id_orig">
-    <div class="form-group"><label>Field ID (unique, no spaces)</label><input type="text" id="fld_id" placeholder="e.g. company_size"></div>
-    <div class="form-group"><label>Label (shown on form)</label><input type="text" id="fld_label" placeholder="e.g. Company Size / 公司规模"></div>
+    <div class="form-group" id="fld_id_group"><label>Field ID (unique, no spaces)</label><input type="text" id="fld_id" placeholder="e.g. company_size"></div>
+    <div class="form-group"><label id="fld_label_lbl">Label (shown on form)</label><input type="text" id="fld_label" placeholder="e.g. Company Size / 公司规模"></div>
     <div class="form-row">
       <div class="form-group">
         <label>Field Type</label>
@@ -733,15 +740,16 @@ tr:hover td{background:#fafcff}
           <option value="select">Dropdown</option>
           <option value="radio">Radio Buttons</option>
           <option value="checkbox">Checkboxes</option>
+          <option value="info">Info / Text Block</option>
         </select>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="fld_req_wrap">
         <label>Required?</label>
         <select id="fld_required"><option value="yes">Yes</option><option value="no">No</option></select>
       </div>
     </div>
     <div class="form-group" id="fld_options_group" style="display:none">
-      <label>Options (one per line)</label>
+      <label id="fld_options_label">Options (one per line)</label>
       <textarea id="fld_options" rows="4" placeholder="Option 1&#10;Option 2&#10;Option 3"></textarea>
     </div>
     <div class="modal-footer">
@@ -774,6 +782,16 @@ let allStaff = [];
 let allSlots = [];
 let allFields = [];
 let emailMode = 'managed';
+let stdConfig = {};
+
+const STD_FIELDS = [
+  { id: 'name',    labelEn: 'Full Name',                  labelZh: '姓名',              type: 'text',     lockRequired: true },
+  { id: 'email',   labelEn: 'Email Address',               labelZh: '电邮地址',           type: 'email',    lockRequired: true },
+  { id: 'company', labelEn: 'Company',                     labelZh: '公司名称',           type: 'text',     lockRequired: false },
+  { id: 'title',   labelEn: 'Job Title',                   labelZh: '职位',              type: 'text',     lockRequired: false },
+  { id: 'phone',   labelEn: 'Phone / WhatsApp',            labelZh: '电话 / WhatsApp',   type: 'tel',      lockRequired: false },
+  { id: 'notes',   labelEn: 'Notes / Topics to Discuss',   labelZh: '备注 / 讨论话题',   type: 'textarea', lockRequired: false },
+];
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 async function doLogin() {
@@ -1458,6 +1476,8 @@ async function loadFormFields() {
     setVal('fbIntro', cfg.form_intro);
     setVal('fbSubmitBtn', cfg.form_submit_btn);
     setVal('fbThankyou', cfg.form_thankyou);
+    try { stdConfig = JSON.parse(cfg.form_std_config || '{}'); } catch(e) { stdConfig = {}; }
+    renderStdFields();
     renderFields();
     renderFormPreview();
   } catch(e) {
@@ -1465,32 +1485,107 @@ async function loadFormFields() {
   }
 }
 
+function renderStdFields() {
+  const el = document.getElementById('stdFieldsList');
+  if (!el) return;
+  el.innerHTML = STD_FIELDS.map(sf => {
+    const sc = stdConfig[sf.id] || {};
+    const enabled = sc.enabled !== false;
+    const required = sf.lockRequired ? true : (sc.required !== false);
+    const labelEn = sc.labelEn || sf.labelEn;
+    const labelZh = sc.labelZh || sf.labelZh;
+    return `<div class="field-item" style="flex-direction:column;align-items:stretch;gap:10px;padding:14px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="field-drag" style="align-self:center">⠿</div>
+        <div class="field-info" style="flex:1;min-width:0">
+          <div class="field-label">${esc(labelEn)}<span style="color:#94a3b8;font-weight:400"> / ${esc(labelZh)}</span></div>
+          <div class="field-meta">${sf.type}${sf.lockRequired ? ' · <span style="color:#3b82f6">always required</span>' : ''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+          ${!sf.lockRequired ? `<label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#374151;cursor:pointer;white-space:nowrap"><input type="checkbox" id="std_req_${sf.id}" ${required?'checked':''} style="accent-color:#3b82f6"> Req</label>` : `<span class="badge badge-blue" style="font-size:11px">Required</span>`}
+          <label class="toggle" title="Show on form"><input type="checkbox" id="std_en_${sf.id}" ${enabled?'checked':''}><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-left:26px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:3px">EN LABEL</div>
+          <input type="text" id="std_labelEn_${sf.id}" value="${esc(labelEn)}" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;outline:none;color:#1a202c" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'">
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:3px">ZH LABEL</div>
+          <input type="text" id="std_labelZh_${sf.id}" value="${esc(labelZh)}" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;outline:none;color:#1a202c" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'">
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function saveStdFields() {
+  const cfg = {};
+  STD_FIELDS.forEach(sf => {
+    cfg[sf.id] = {
+      enabled: document.getElementById('std_en_' + sf.id)?.checked ?? true,
+      required: sf.lockRequired ? true : (document.getElementById('std_req_' + sf.id)?.checked ?? false),
+      labelEn: document.getElementById('std_labelEn_' + sf.id)?.value.trim() || sf.labelEn,
+      labelZh: document.getElementById('std_labelZh_' + sf.id)?.value.trim() || sf.labelZh,
+    };
+  });
+  try {
+    await api('/v2-save-settings', {method:'POST', body: JSON.stringify({form_std_config: JSON.stringify(cfg)})});
+    stdConfig = cfg;
+    toast('Standard fields saved', 'success');
+    renderFormPreview();
+  } catch(e) { toast('Save failed. Check connection.', 'error'); }
+}
+
 function renderFields() {
   const el = document.getElementById('fieldsList');
-  if (!allFields.length) { el.innerHTML = '<div class="empty-state"><p>No fields yet. Add your first field above.</p></div>'; return; }
-  el.innerHTML = allFields.map((f,i) => `
-    <div class="field-item ${f.enabled==='no'?'disabled-field':''}">
+  if (!allFields.length) { el.innerHTML = '<div class="empty-state"><p>No custom fields yet. Add your first field above.</p></div>'; return; }
+  el.innerHTML = allFields.map((f,i) => {
+    const isInfo = f.type === 'info';
+    const meta = isInfo
+      ? `<div class="field-meta" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px">${esc(f.label||'')}</div>`
+      : `<div class="field-meta">${f.type||'text'} · ${f.required==='yes'?'Required':'Optional'}${f.options?' · '+f.options:''}</div>`;
+    const label = isInfo
+      ? `<div class="field-label" style="color:#3b82f6">ℹ Info Block</div>`
+      : `<div class="field-label">${esc(f.label||f.field_id||'')}</div>`;
+    return `<div class="field-item ${f.enabled==='no'?'disabled-field':''}">
       <div class="field-drag">⠿</div>
-      <div class="field-info">
-        <div class="field-label">${esc(f.label||f.field_id||'')}</div>
-        <div class="field-meta">${f.type||'text'} · ${f.required==='yes'?'Required':'Optional'} ${f.options?'· '+f.options:''}</div>
-      </div>
+      <div class="field-info">${label}${meta}</div>
       <div class="field-actions">
         <button class="btn btn-outline btn-xs" onclick="moveField(${i},-1)" ${i===0?'disabled':''}>↑</button>
         <button class="btn btn-outline btn-xs" onclick="moveField(${i},1)" ${i===allFields.length-1?'disabled':''}>↓</button>
         <button class="btn btn-outline btn-xs" onclick="editField(${i})">Edit</button>
         <button class="btn btn-danger btn-xs" onclick="deleteField('${esc(f.field_id)}')">Del</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function renderFormPreview() {
   const title = document.getElementById('fbTitle')?.value || 'Book Your Appointment';
   const intro = document.getElementById('fbIntro')?.value || '';
   const btn = document.getElementById('fbSubmitBtn')?.value || 'Submit';
-  let html = `<div style="font-family:sans-serif"><h3 style="font-size:15px;color:#0f1c2e;margin-bottom:6px">${esc(title)}</h3>`;
+  const bc = settingsCache.brand_color || '#0f1c2e';
+  let html = `<div style="font-family:sans-serif"><h3 style="font-size:15px;color:${bc};margin-bottom:6px">${esc(title)}</h3>`;
   if (intro) html += `<p style="font-size:12px;color:#64748b;margin-bottom:12px">${esc(intro)}</p>`;
+  // Standard fields
+  STD_FIELDS.forEach(sf => {
+    const sc = stdConfig[sf.id] || {};
+    if (sc.enabled === false) return;
+    const label = sc.labelEn || sf.labelEn;
+    const req = sf.lockRequired || (sc.required !== false);
+    html += `<div style="margin-bottom:10px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">${esc(label)}${req?' *':''}</label>`;
+    if (sf.type==='textarea') html += `<textarea style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px" rows="2" disabled></textarea>`;
+    else html += `<input type="${sf.type}" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px" disabled>`;
+    html += '</div>';
+  });
+  // Custom fields
   allFields.filter(f => f.enabled !== 'no').forEach(f => {
+    if (f.type==='info') {
+      html += `<div style="background:#f8fafc;border-left:3px solid ${bc};padding:8px 12px;border-radius:4px;margin-bottom:10px;font-size:12px;color:#374151;line-height:1.5">${esc(f.label)}</div>`;
+      return;
+    }
     html += `<div style="margin-bottom:10px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">${esc(f.label||f.field_id)}${f.required==='yes'?' *':''}</label>`;
     if (f.type==='textarea') html += `<textarea style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px" rows="2" disabled></textarea>`;
     else if (f.type==='select') html += `<select style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px" disabled><option>${(f.options||'').split(',')[0]||'Select...'}</option></select>`;
@@ -1498,7 +1593,9 @@ function renderFormPreview() {
     else html += `<input type="${f.type||'text'}" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px" disabled>`;
     html += '</div>';
   });
-  html += `<button style="background:#0f1c2e;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:13px;cursor:default">${esc(btn)}</button></div>`;
+  // Slot picker (always present)
+  html += `<div style="margin-bottom:10px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Preferred Time Slot *</label><select style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px" disabled><option>Select a slot...</option></select></div>`;
+  html += `<button style="background:${bc};color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:13px;cursor:default">${esc(btn)}</button></div>`;
   document.getElementById('formPreview').innerHTML = html;
 }
 
@@ -1515,12 +1612,20 @@ async function saveFormHeader() {
 
 function toggleFieldOptions() {
   const t = document.getElementById('fld_type').value;
-  document.getElementById('fld_options_group').style.display = ['select','radio','checkbox'].includes(t) ? 'block' : 'none';
+  const isInfo = t === 'info';
+  document.getElementById('fld_id_group').style.display = isInfo ? 'none' : 'block';
+  document.getElementById('fld_label_lbl').textContent = isInfo ? 'Text Content (shown on form)' : 'Label (shown on form)';
+  document.getElementById('fld_label').placeholder = isInfo ? 'Enter the text or instructions to display...' : 'e.g. Company Size / 公司规模';
+  document.getElementById('fld_req_wrap').style.display = isInfo ? 'none' : 'block';
+  const optGroup = document.getElementById('fld_options_group');
+  document.getElementById('fld_options_label').textContent = 'Options (one per line)';
+  optGroup.style.display = ['select','radio','checkbox'].includes(t) ? 'block' : 'none';
 }
 
 function editField(idx) {
   const f = allFields[idx];
-  document.getElementById('fieldModalTitle').textContent = 'Edit Field';
+  const isInfo = f.type === 'info';
+  document.getElementById('fieldModalTitle').textContent = isInfo ? 'Edit Info Block' : 'Edit Field';
   document.getElementById('fld_id_orig').value = f.field_id;
   document.getElementById('fld_id').value = f.field_id;
   document.getElementById('fld_label').value = f.label || '';
@@ -1532,17 +1637,19 @@ function editField(idx) {
 }
 
 async function saveField() {
-  const id = document.getElementById('fld_id').value.trim().replace(/\s+/g,'_');
+  const type = document.getElementById('fld_type').value;
+  const isInfo = type === 'info';
+  let id = document.getElementById('fld_id').value.trim().replace(/\s+/g,'_');
+  if (!id && isInfo) id = 'info_' + Date.now();
   const label = document.getElementById('fld_label').value.trim();
-  if (!id||!label) return toast('ID and label required', 'error');
-  const opts = document.getElementById('fld_options').value.split('\n').filter(Boolean).join(',');
+  if (!id || !label) return toast(isInfo ? 'Text content required' : 'ID and label required', 'error');
+  const opts = isInfo ? '' : document.getElementById('fld_options').value.split('\n').filter(Boolean).join(',');
   const orig = document.getElementById('fld_id_orig').value;
   const order = orig ? (allFields.find(f=>f.field_id===orig)?.order||99) : allFields.length+1;
+  const reqVal = isInfo ? 'no' : document.getElementById('fld_required').value;
   await api('/v2-save-form-field', {method:'POST', body: JSON.stringify({
     field_id: id, orig_field_id: orig||id, label,
-    type: document.getElementById('fld_type').value,
-    required: document.getElementById('fld_required').value,
-    options: opts, order, enabled: 'yes'
+    type, required: reqVal, options: opts, order, enabled: 'yes'
   })});
   toast('Field saved', 'success');
   closeModal('addFieldModal');
