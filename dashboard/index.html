@@ -1161,26 +1161,46 @@ async function addContact() {
 }
 
 async function inviteOne(email, name, company) {
-  await api('/v2-invite', {method:'POST', body: JSON.stringify({email, name, company})});
-  toast('Invite sent to ' + email, 'success');
-  loadContacts();
+  showConfirm(
+    'Send Invite Email',
+    `Send the invite email to:\n\n👤 ${name}\n📧 ${email}${company ? '\n🏢 ' + company : ''}\n\nTemplate: Invite`,
+    async () => {
+      await api('/v2-invite', {method:'POST', body: JSON.stringify({email, name, company})});
+      toast(`✅ Invite sent to ${name} (${email})`, 'success');
+      loadContacts();
+    }, 'Send', 'btn-primary'
+  );
 }
 
 async function remindOne(email, name, company) {
-  await api('/v2-remind', {method:'POST', body: JSON.stringify({email, name, company})});
-  toast('Reminder sent to ' + email, 'success');
+  showConfirm(
+    'Send Reminder Email',
+    `Send the reminder email to:\n\n👤 ${name}\n📧 ${email}${company ? '\n🏢 ' + company : ''}\n\nTemplate: Reminder`,
+    async () => {
+      await api('/v2-remind', {method:'POST', body: JSON.stringify({email, name, company})});
+      toast(`✅ Reminder sent to ${name} (${email})`, 'success');
+    }, 'Send', 'btn-primary'
+  );
 }
 
 async function inviteAll() {
   const uninvited = allContacts.filter(c => (!c.invite_sent || c.invite_sent === 'no') && c.status !== 'deleted' && c.status !== 'unsubscribed');
-  if (!uninvited.length) return toast('No uninvited contacts', '');
-  toast(`Sending ${uninvited.length} invites...`, '');
-  let sent = 0;
-  for (const c of uninvited) {
-    try { await api('/v2-invite', {method:'POST', body: JSON.stringify({email:c.email, name:c.name, company:c.company||''})}); sent++; } catch(e) {}
-  }
-  toast(`${sent} invite${sent!==1?'s':''} sent`, 'success');
-  loadContacts();
+  if (!uninvited.length) return toast('No uninvited contacts to send to', '');
+  const preview = uninvited.slice(0, 5).map(c => `• ${c.name} (${c.email})`).join('\n');
+  const more = uninvited.length > 5 ? `\n…and ${uninvited.length - 5} more` : '';
+  showConfirm(
+    `Invite All — ${uninvited.length} contacts`,
+    `Send the invite email to ${uninvited.length} contact${uninvited.length !== 1 ? 's' : ''} who haven't been invited yet:\n\n${preview}${more}\n\nTemplate: Invite`,
+    async () => {
+      toast(`Sending ${uninvited.length} invites...`, '');
+      let sent = 0;
+      for (const c of uninvited) {
+        try { await api('/v2-invite', {method:'POST', body: JSON.stringify({email:c.email, name:c.name, company:c.company||''})}); sent++; } catch(e) {}
+      }
+      toast(`✅ ${sent} invite${sent !== 1 ? 's' : ''} sent`, 'success');
+      loadContacts();
+    }, 'Send All', 'btn-primary'
+  );
 }
 
 function deleteContact(email, name) {
@@ -1866,9 +1886,12 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
 
 let confirmCallback = null;
-function showConfirm(title, msg, cb) {
+function showConfirm(title, msg, cb, btnLabel, btnClass) {
   document.getElementById('confirmTitle').textContent = title;
-  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmMsg').innerHTML = esc(msg).replace(/\n/g, '<br>');
+  const btn = document.getElementById('confirmBtn');
+  btn.textContent = btnLabel || 'Delete';
+  btn.className = 'btn ' + (btnClass || 'btn-danger');
   confirmCallback = cb;
   openModal('confirmModal');
 }
